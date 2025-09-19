@@ -17,7 +17,7 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
         : 'moonlight-hero'
     }`}>
       {/* Animated Background Elements */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" suppressHydrationWarning>
         {/* Floating geometric shapes with improved animations */}
         <motion.div 
           className={`absolute top-20 left-20 w-72 h-72 rounded-lg blur-3xl ${
@@ -68,53 +68,69 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
         />
         
         {/* Floating geometric particles with improved animation */}
-        {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className={`absolute rounded-sm ${
-              isDeepSpace 
-                ? 'w-1 h-1 bg-white' 
-                : 'w-2 h-2 bg-white/30'
-            }`}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0],
-              rotate: [0, 180, 360],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-              ease: "easeInOut"
-            }}
-          />
-        ))}
+        {[...Array(15)].map((_, i) => {
+          // Generate random positions once on mount to avoid hydration issues
+          const randomLeft = Math.random() * 100;
+          const randomTop = Math.random() * 100;
+          const randomDuration = 3 + Math.random() * 2;
+          const randomDelay = Math.random() * 5;
+          
+          return (
+            <motion.div
+              key={i}
+              className={`absolute rounded-sm ${
+                isDeepSpace 
+                  ? 'w-1 h-1 bg-white' 
+                  : 'w-2 h-2 bg-white/30'
+              }`}
+              style={{
+                left: `${randomLeft}%`,
+                top: `${randomTop}%`,
+              }}
+              animate={{
+                opacity: [0, 1, 0],
+                scale: [0, 1, 0],
+                rotate: [0, 180, 360],
+              }}
+              transition={{
+                duration: randomDuration,
+                repeat: Infinity,
+                delay: randomDelay,
+                ease: "easeInOut"
+              }}
+            />
+          );
+        })}
 
         {/* Deep space cosmic dust */}
-        {isDeepSpace && [...Array(20)].map((_, i) => (
-          <motion.div
-            key={`dust-${i}`}
-            className="absolute w-0.5 h-0.5 bg-cyan-400/40 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0, 0.8, 0],
-              scale: [0, 1.5, 0],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 10,
-              ease: "easeInOut"
-            }}
-          />
-        ))}
+        {isDeepSpace && [...Array(20)].map((_, i) => {
+          // Generate random positions once on mount to avoid hydration issues
+          const randomLeft = Math.random() * 100;
+          const randomTop = Math.random() * 100;
+          const randomDuration = 4 + Math.random() * 2;
+          const randomDelay = Math.random() * 10;
+          
+          return (
+            <motion.div
+              key={`dust-${i}`}
+              className="absolute w-0.5 h-0.5 bg-cyan-400/40 rounded-full"
+              style={{
+                left: `${randomLeft}%`,
+                top: `${randomTop}%`,
+              }}
+              animate={{
+                opacity: [0, 0.8, 0],
+                scale: [0, 1.5, 0],
+              }}
+              transition={{
+                duration: randomDuration,
+                repeat: Infinity,
+                delay: randomDelay,
+                ease: "easeInOut"
+              }}
+            />
+          );
+        })}
       </div>
 
       <div className="relative z-10 text-center max-w-6xl mx-auto px-6">
@@ -158,28 +174,6 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
           </motion.div>
         </motion.div>
 
-        {/* Project tagline with fade-in */}
-        <motion.h2 
-          className="text-3xl md:text-5xl font-semibold text-white mb-6 leading-tight font-poppins"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-        >
-          Climate-Resilient Urban Intelligence Platform
-        </motion.h2>
-        
-        <motion.p 
-          className={`text-xl mb-8 max-w-3xl mx-auto leading-relaxed font-poppins ${
-            isDeepSpace ? 'text-gray-200' : 'text-gray-300'
-          }`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
-        >
-          Harnessing NASA Earth observation data and AI to empower urban planners with 
-          real-time climate insights, predictive analytics, and actionable recommendations 
-          for building resilient, sustainable cities.
-        </motion.p>
 
         {/* Enhanced feature highlights with stagger animation */}
         <motion.div 
@@ -292,32 +286,6 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
         </motion.div>
       </div>
 
-      {/* Enhanced scroll indicator */}
-      <motion.div 
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 1.6 }}
-      >
-        <motion.div 
-          className={`w-6 h-10 rounded-full flex justify-center cursor-pointer group transition-all duration-300 ${
-            isDeepSpace 
-              ? 'border-2 border-cyan-500/30 hover:border-cyan-500/50' 
-              : 'border-2 border-white/30 hover:border-white/50'
-          }`}
-          whileHover={{ scale: 1.1 }}
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <motion.div 
-            className={`w-1 h-3 rounded-full mt-2 ${
-              isDeepSpace ? 'bg-cyan-400/60' : 'bg-white/60'
-            }`}
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </motion.div>
-      </motion.div>
     </section>
   )
 }

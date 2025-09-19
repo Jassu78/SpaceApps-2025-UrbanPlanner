@@ -161,13 +161,23 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+        @layer base {
+          * {
+            @apply border-border outline-ring/50;
+          }
+          html {
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+            height: 100%;
+          }
+          body {
+            @apply bg-background text-foreground;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+          }
   
         /* Custom scrollbar for deep space theme */
         .deep-space-scrollbar::-webkit-scrollbar {
@@ -188,4 +198,15 @@
         }
 
         /* Navbar Styles - Removed outer background, only keeping rounded container */
+        
+        /* Prevent overscroll and white bar issues */
+        html, body {
+          overscroll-behavior: none;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Ensure smooth scrolling without overscroll effects */
+        * {
+          overscroll-behavior: none;
+        }
 }

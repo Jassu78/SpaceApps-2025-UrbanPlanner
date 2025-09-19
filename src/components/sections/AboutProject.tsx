@@ -89,7 +89,7 @@ export const AboutProject = ({ isDeepSpace = false }: AboutProjectProps) => {
   }
 
   return (
-    <section className={`py-20 relative overflow-hidden ${
+    <section id="about" className={`py-20 relative overflow-hidden ${
       isDeepSpace 
         ? 'bg-gradient-to-b from-black via-slate-900 to-black' 
         : 'bg-gradient-to-b from-slate-50 to-white'

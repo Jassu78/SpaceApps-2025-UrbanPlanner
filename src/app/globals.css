@@ -169,21 +169,23 @@
     @apply bg-background text-foreground;
   }
   
-  /* Custom scrollbar for deep space theme */
-  .deep-space-scrollbar::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  .deep-space-scrollbar::-webkit-scrollbar-track {
-    background: #0A0E27;
-  }
-  
-  .deep-space-scrollbar::-webkit-scrollbar-thumb {
-    background: #00D4FF;
-    border-radius: 4px;
-  }
-  
-  .deep-space-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #00FFFF;
-  }
+        /* Custom scrollbar for deep space theme */
+        .deep-space-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .deep-space-scrollbar::-webkit-scrollbar-track {
+          background: #0A0E27;
+        }
+
+        .deep-space-scrollbar::-webkit-scrollbar-thumb {
+          background: #00D4FF;
+          border-radius: 4px;
+        }
+
+        .deep-space-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #00FFFF;
+        }
+
+        /* Navbar Styles - Removed outer background, only keeping rounded container */
 }

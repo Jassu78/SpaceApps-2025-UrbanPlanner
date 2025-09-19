@@ -74,7 +74,7 @@ export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
   }
 
   return (
-    <section className={`py-20 relative overflow-hidden ${
+    <section id="demo" className={`py-20 relative overflow-hidden ${
       isDeepSpace 
         ? 'bg-gradient-to-br from-black via-slate-900 to-black' 
         : 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Navbar } from '@/components/Navbar'
 import { HeroSection } from '@/components/sections/HeroSection'
 import { AboutProject } from '@/components/sections/AboutProject'
 import { TeamSection } from '@/components/sections/TeamSection'
@@ -19,7 +20,8 @@ export default function Home() {
     <main className={`min-h-screen transition-all duration-1000 ${
       isDeepSpace ? 'deep-space-scrollbar' : ''
     }`}>
-      <HeroSection onThemeChange={handleThemeChange} />
+      <Navbar isDeepSpace={isDeepSpace} onThemeChange={handleThemeChange} />
+      <HeroSection isDeepSpace={isDeepSpace} />
       <AboutProject isDeepSpace={isDeepSpace} />
       <TeamSection isDeepSpace={isDeepSpace} />
       <TechnologyStack isDeepSpace={isDeepSpace} />

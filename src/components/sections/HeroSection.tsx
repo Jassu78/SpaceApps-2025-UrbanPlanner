@@ -3,22 +3,15 @@
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Sparkles, Globe, Brain } from "lucide-react"
 import { motion } from "framer-motion"
-import { useState } from "react"
 
 interface HeroSectionProps {
-  onThemeChange?: (isDeepSpace: boolean) => void
+  isDeepSpace?: boolean
 }
 
-export const HeroSection = ({ onThemeChange }: HeroSectionProps) => {
-  const [isDeepSpace, setIsDeepSpace] = useState(false)
-
-  const handleThemeChange = (newTheme: boolean) => {
-    setIsDeepSpace(newTheme)
-    onThemeChange?.(newTheme)
-  }
+export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
 
   return (
-    <section className={`relative min-h-screen flex items-center justify-center overflow-hidden font-poppins transition-all duration-1000 ${
+    <section className={`relative min-h-screen flex items-center justify-center overflow-hidden font-poppins transition-all duration-1000 pt-16 ${
       isDeepSpace 
         ? 'deep-space-hero' 
         : 'moonlight-hero'
@@ -125,33 +118,6 @@ export const HeroSection = ({ onThemeChange }: HeroSectionProps) => {
       </div>
 
       <div className="relative z-10 text-center max-w-6xl mx-auto px-6">
-        {/* Theme Toggle Button */}
-        <motion.div 
-          className="absolute top-8 right-8 z-20"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-        >
-          <Button
-            onClick={() => handleThemeChange(!isDeepSpace)}
-            className={`px-4 py-2 rounded-full transition-all duration-500 ${
-              isDeepSpace
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/30'
-                : 'bg-white/10 text-white border-white/30 hover:bg-white/20'
-            }`}
-            variant="outline"
-          >
-            <motion.span
-              animate={{ rotate: isDeepSpace ? 0 : 180 }}
-              transition={{ duration: 0.5 }}
-            >
-              {isDeepSpace ? '🌌' : '🌙'}
-            </motion.span>
-            <span className="ml-2">
-              {isDeepSpace ? 'Deep Space' : 'Moonlight'}
-            </span>
-          </Button>
-        </motion.div>
 
         {/* Staggered text animations */}
         <motion.div 

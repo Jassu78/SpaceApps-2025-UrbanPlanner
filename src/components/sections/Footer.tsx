@@ -8,7 +8,6 @@ import {
   Twitter, 
   Mail, 
   ExternalLink,
-  Heart,
   Rocket,
   Star
 } from "lucide-react"
@@ -344,18 +343,6 @@ export const Footer = ({ isDeepSpace = false }: FooterProps) => {
               </motion.span>
             </div>
             
-            <div className={`flex items-center gap-2 ${
-              isDeepSpace ? 'text-gray-400' : 'text-gray-400'
-            }`}>
-              <span>Made with</span>
-              <motion.span
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                <Heart className="w-4 h-4 text-red-500" />
-              </motion.span>
-              <span>by Team MoonLight</span>
-            </div>
           </div>
         </motion.div>
       </div>

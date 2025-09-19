@@ -136,7 +136,7 @@ export const TechnologyStack = ({ isDeepSpace = false }: TechnologyStackProps) =
   }
 
   return (
-    <section className={`py-20 relative overflow-hidden ${
+    <section id="technology" className={`py-20 relative overflow-hidden ${
       isDeepSpace 
         ? 'bg-gradient-to-b from-black via-slate-900 to-black' 
         : 'bg-gradient-to-b from-slate-50 to-white'

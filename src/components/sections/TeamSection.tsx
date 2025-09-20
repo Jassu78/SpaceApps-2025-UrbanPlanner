@@ -17,64 +17,53 @@ export const TeamSection = ({ isDeepSpace = false }: TeamSectionProps) => {
       skills: ["Python", "React", "ML/AI", "GIS"],
       avatar: "👨‍💻",
       social: {
-        github: "https://github.com/jaswanth",
-        linkedin: "https://linkedin.com/in/jaswanth",
-        twitter: "https://twitter.com/jaswanth"
+        github: "https://github.com/jassu78",
+        linkedin: "https://linkedin.com/in/jassu78",
+        email: "jaswanthjogi7815@gmail.com"
       }
     },
     {
-      name: "Matcha Vamsi Krishna",
-      role: "Frontend Dev & UI/UX",
-      skills: ["React", "TypeScript", "D3.js", "Figma"],
+      name: "Kadavakollu Chaitanya",
+      role: "Backend Developer",
+      skills: ["Python", "FastAPI", "ML/AI", "Data Science"],
       avatar: "👨‍💻",
       social: {
-        github: "https://github.com/vamsi",
-        linkedin: "https://linkedin.com/in/vamsi",
-        twitter: "https://twitter.com/vamsi"
+        github: "https://github.com/chaitanya07422",
+        linkedin: "https://in.linkedin.com/in/chaitanya-kadavakollu-354084278",
+        email: "Kadavakolluchaitanya@gmail.com"
       }
     },
     {
-      name: "Chaitanya Rao",
-      role: "Backend Dev & ML",
-      skills: ["Python", "FastAPI", "TensorFlow", "PostGIS"],
-      avatar: "👨‍💻",
-      social: {
-        github: "https://github.com/chaitanya",
-        linkedin: "https://linkedin.com/in/chaitanya",
-        twitter: "https://twitter.com/chaitanya"
-      }
-    },
-    {
-      name: "Ravi Kumar",
-      role: "Data Engineer & GIS",
-      skills: ["Python", "PostgreSQL", "GeoPandas", "QGIS"],
-      avatar: "👨‍💻",
-      social: {
-        github: "https://github.com/ravi",
-        linkedin: "https://linkedin.com/in/ravi",
-        twitter: "https://twitter.com/ravi"
-      }
-    },
-    {
-      name: "Uday Kumar",
-      role: "DevOps & Cloud",
-      skills: ["AWS", "Docker", "Kubernetes", "Terraform"],
-      avatar: "👨‍💻",
-      social: {
-        github: "https://github.com/uday",
-        linkedin: "https://linkedin.com/in/uday",
-        twitter: "https://twitter.com/uday"
-      }
-    },
-    {
-      name: "Rama Kumar",
+      name: "Gandreti Uday Kiran",
       role: "Full-Stack Developer",
-      skills: ["Next.js", "Node.js", "MongoDB", "Redis"],
+      skills: ["React", "Node.js", "JavaScript", "Web Development"],
       avatar: "👨‍💻",
       social: {
-        github: "https://github.com/rama",
-        linkedin: "https://linkedin.com/in/rama",
-        twitter: "https://twitter.com/rama"
+        github: "https://github.com/udaykirangandreti",
+        linkedin: "https://www.linkedin.com/in/gandreti-uday-kiran-52a50828a",
+        email: "udaykirangandreti@gmail.com"
+      }
+    },
+    {
+      name: "Palisetti Ravi Shankar",
+      role: "Data Engineer",
+      skills: ["Python", "Data Processing", "Analytics", "Database"],
+      avatar: "👨‍💻",
+      social: {
+        github: "https://github.com/Ravishankarpalisetti",
+        linkedin: "https://www.linkedin.com/in/ravi-shankar-palisetti",
+        email: "palisettiravishankar1115@gmail.com"
+      }
+    },
+    {
+      name: "Chintha Venkata Rama Subba Rao",
+      role: "Frontend Developer",
+      skills: ["React", "TypeScript", "UI/UX", "Web Development"],
+      avatar: "👨‍💻",
+      social: {
+        github: "https://github.com/Rama2103",
+        linkedin: "https://www.linkedin.com/in/rama-chintha21/",
+        email: "ramach2103@gmail.com"
       }
     }
   ]
@@ -316,8 +305,7 @@ export const TeamSection = ({ isDeepSpace = false }: TeamSectionProps) => {
                     {[
                       { icon: Github, href: member.social.github, color: "hover:text-gray-300" },
                       { icon: Linkedin, href: member.social.linkedin, color: isDeepSpace ? "hover:text-cyan-400" : "hover:text-blue-400" },
-                      { icon: Twitter, href: member.social.twitter, color: isDeepSpace ? "hover:text-purple-400" : "hover:text-cyan-400" },
-                      { icon: Mail, href: `mailto:${member.name.toLowerCase().replace(' ', '.')}@moonlight-urban.com`, color: isDeepSpace ? "hover:text-green-400" : "hover:text-green-400" }
+                      { icon: Mail, href: `mailto:${member.social.email}`, color: isDeepSpace ? "hover:text-green-400" : "hover:text-green-400" }
                     ].map((social, socialIndex) => (
                       <motion.a
                         key={socialIndex}

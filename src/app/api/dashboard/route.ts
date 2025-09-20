@@ -152,16 +152,16 @@ export async function GET(request: NextRequest) {
         lastUpdated: airQuality.timestamp as string
       } : null,
       weather: weather ? {
-        temperature: (weather.current as Record<string, unknown>)?.temperature as number,
-        humidity: (weather.current as Record<string, unknown>)?.humidity as number,
-        windSpeed: (weather.current as Record<string, unknown>)?.windSpeed as string,
-        precipitation: (weather.current as Record<string, unknown>)?.precipitationProbability as number,
-        forecast: (weather.current as Record<string, unknown>)?.shortForecast as string,
+        temperature: (weather.current as Record<string, unknown>)?.temperature as number || weather.temperature as number,
+        humidity: (weather.current as Record<string, unknown>)?.humidity as number || weather.humidity as number,
+        windSpeed: (weather.current as Record<string, unknown>)?.windSpeed as string || weather.windSpeed as string,
+        precipitation: (weather.current as Record<string, unknown>)?.precipitationProbability as number || weather.precipitation as number,
+        forecast: (weather.current as Record<string, unknown>)?.shortForecast as string || weather.description as string,
         heatIndex: calculateHeatIndex(
-          (weather.current as Record<string, unknown>)?.temperature as number, 
-          (weather.current as Record<string, unknown>)?.humidity as number
+          (weather.current as Record<string, unknown>)?.temperature as number || weather.temperature as number, 
+          (weather.current as Record<string, unknown>)?.humidity as number || weather.humidity as number
         ),
-        lastUpdated: (weather.metadata as Record<string, unknown>)?.generatedAt as string
+        lastUpdated: (weather.metadata as Record<string, unknown>)?.generatedAt as string || weather.timestamp as string
       } : null,
       population: population ? {
         density: (population as Record<string, unknown>)?.density as number || 0,

@@ -408,10 +408,13 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-center">
                   <div className="text-4xl font-bold text-white mb-2">
-                    {(dashboardData.metrics?.urbanHeatIsland?.level as string) || 'N/A'}
+                    {(dashboardData.metrics?.urbanHeatIsland?.intensity as number) ? 
+                      `${(dashboardData.metrics.urbanHeatIsland.intensity as number).toFixed(1)}°C` : 
+                      'N/A'
+                    }
                   </div>
                   <div className="text-sm text-gray-300 mb-4">
-                    Intensity: {(dashboardData.metrics?.urbanHeatIsland?.intensity as number) || 'N/A'}°C
+                    Level: {(dashboardData.metrics?.urbanHeatIsland?.level as string) || 'N/A'}
                   </div>
                   <div className="text-xs text-gray-400">
                     Based on land surface temperature analysis

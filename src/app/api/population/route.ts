@@ -93,22 +93,12 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Population API Error:', error)
-    
-    // Return fallback data instead of error
-    const fallbackData = {
-      population: 8500000,
-      density: 2850,
-      growthRate: 0.8,
-      year: 2023,
-      country: 'USA',
-      timestamp: new Date().toISOString(),
-      source: 'Fallback Data (API Unavailable)'
-    }
-    
-    return NextResponse.json(fallbackData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // 5 min cache for fallback
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch population data',
+        message: error instanceof Error ? error.message : 'Unknown error'
       },
-    })
+      { status: 500 }
+    )
   }
 }

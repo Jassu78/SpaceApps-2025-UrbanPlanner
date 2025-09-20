@@ -87,23 +87,12 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Weather API Error:', error)
-    
-    // Return fallback data instead of error
-    const fallbackData = {
-      temperature: 23.5,
-      humidity: 65,
-      precipitation: 5.2,
-      windSpeed: 12.3,
-      pressure: 1013.2,
-      description: 'Partly Cloudy',
-      timestamp: new Date().toISOString(),
-      source: 'Fallback Data (API Unavailable)'
-    }
-    
-    return NextResponse.json(fallbackData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // 5 min cache for fallback
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch weather data',
+        message: error instanceof Error ? error.message : 'Unknown error'
       },
-    })
+      { status: 500 }
+    )
   }
 }

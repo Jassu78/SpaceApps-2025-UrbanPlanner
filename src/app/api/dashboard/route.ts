@@ -80,8 +80,9 @@ export async function GET(request: NextRequest) {
       console.error('Landsat API error:', error)
     }
 
-    // Add fallback data if any API failed
-    if (!airQuality) {
+    // Only add fallback data if APIs actually failed (not just null)
+    if (!airQuality && airQualityRes.status === 'rejected') {
+      console.log('Air Quality API failed, using fallback data')
       airQuality = {
         aqi: 45,
         status: 'Good',
@@ -100,7 +101,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (!weather) {
+    if (!weather && weatherRes.status === 'rejected') {
+      console.log('Weather API failed, using fallback data')
       weather = {
         temperature: 23.5,
         humidity: 65,
@@ -113,7 +115,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (!population) {
+    if (!population && populationRes.status === 'rejected') {
+      console.log('Population API failed, using fallback data')
       population = {
         population: 8500000,
         density: 2850,
@@ -125,7 +128,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (!landsat) {
+    if (!landsat && landsatRes.status === 'rejected') {
+      console.log('Landsat API failed, using fallback data')
       landsat = {
         features: [],
         hasError: true,
@@ -203,75 +207,13 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Dashboard API Error:', error)
-    
-    // Return fallback dashboard data instead of error
-    const fallbackData = {
-      timestamp: new Date().toISOString(),
-      location: {
-        name: 'Sample City',
-        coordinates: [40.7128, -74.0060],
-        country: 'USA'
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch dashboard data',
+        message: error instanceof Error ? error.message : 'Unknown error'
       },
-      weather: {
-        temperature: 23.5,
-        humidity: 65,
-        precipitation: 5.2,
-        windSpeed: 12.3,
-        pressure: 1013.2,
-        description: 'Partly Cloudy',
-        timestamp: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
-      },
-      airQuality: {
-        aqi: 45,
-        status: 'Good',
-        healthImpact: 'Air quality is acceptable for most people',
-        pollutants: {
-          pm25: 12.5,
-          pm10: 18.3,
-          no2: 25.7,
-          o3: 45.2,
-          so2: 8.9,
-          co: 1.2
-        },
-        timestamp: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
-      },
-      population: {
-        population: 8500000,
-        density: 2850,
-        growthRate: 0.8,
-        year: 2023,
-        country: 'USA',
-        timestamp: new Date().toISOString()
-      },
-      satellite: {
-        features: [],
-        hasError: true,
-        ndvi: 0.65,
-        health: 'Moderate',
-        timestamp: new Date().toISOString()
-      },
-      urbanMetrics: {
-        environmentalHealth: 75,
-        urbanHeatIsland: {
-          intensity: 2.5,
-          level: 'Moderate'
-        },
-        airQualityScore: 85,
-        vegetationHealth: {
-          ndvi: 0.65,
-          health: 'Moderate'
-        }
-      },
-      source: 'Fallback Data (API Unavailable)'
-    }
-    
-    return NextResponse.json(fallbackData, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // 5 min cache for fallback
-      },
-    })
+      { status: 500 }
+    )
   }
 }
 

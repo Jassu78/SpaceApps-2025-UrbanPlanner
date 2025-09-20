@@ -57,7 +57,7 @@ export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
   ]
 
   const handleFeatureClick = (route: string) => {
-    router.push('/dashboard')
+    router.push(route)
   }
 
   const handleLaunchDemo = () => {

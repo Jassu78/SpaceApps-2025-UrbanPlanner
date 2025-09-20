@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,9 +15,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Satellite,
-  BarChart3,
-  RefreshCw
+  BarChart3
 } from "lucide-react"
 
 interface ClimateData {
@@ -39,23 +37,7 @@ export default function DashboardPage() {
     timestamp: new Date().toISOString()
   })
 
-  const [isLoading, setIsLoading] = useState(false)
-
-  const refreshData = () => {
-    setIsLoading(true)
-    // Simulate data refresh
-    setTimeout(() => {
-      setClimateData({
-        temperature: 24.5 + (Math.random() - 0.5) * 2,
-        airQuality: Math.max(0, Math.min(100, 85 + (Math.random() - 0.5) * 10)),
-        humidity: Math.max(0, Math.min(100, 65 + (Math.random() - 0.5) * 10)),
-        vegetation: Math.max(0, Math.min(1, 0.72 + (Math.random() - 0.5) * 0.1)),
-        precipitation: Math.max(0, 12.3 + (Math.random() - 0.5) * 5),
-        timestamp: new Date().toISOString()
-      })
-      setIsLoading(false)
-    }, 1500)
-  }
+  // Data refresh functionality can be added later
 
   const getAirQualityStatus = (aqi: number) => {
     if (aqi >= 80) return { status: 'Good', color: 'green', icon: CheckCircle }

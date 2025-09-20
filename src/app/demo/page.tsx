@@ -12,8 +12,6 @@ import {
   Play,
   ArrowRight,
   Globe,
-  Brain,
-  Sparkles,
   Zap
 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -83,7 +81,7 @@ export default function DemoPage() {
           </h1>
           
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            Discover how NASA's Earth observation data and AI technology can transform 
+            Discover how NASA&apos;s Earth observation data and AI technology can transform 
             urban planning with real-time insights and predictive analytics.
           </p>
 

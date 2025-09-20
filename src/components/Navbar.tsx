@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Button } from "@/components/ui/button"
-import { Sun, Moon, ChevronDown, BarChart3, MapPin, MessageSquare, Activity, Home } from "lucide-react"
+import { Sun, Moon, ChevronDown, BarChart3, MapPin, MessageSquare, Activity } from "lucide-react"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import Link from "next/link"
@@ -110,7 +110,7 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
-              {getCurrentPageIcon() && React.createElement(getCurrentPageIcon(), {
+              {getCurrentPageIcon() && React.createElement(getCurrentPageIcon()!, {
                 className: `w-5 h-5 ${
                   isDeepSpace ? 'text-cyan-300' : 'text-white'
                 }`
@@ -182,7 +182,7 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
                 style={{ display: isAppMenuOpen ? 'block' : 'none' }}
               >
                 <div className="py-2">
-                  {appPages.map((page, index) => (
+                  {appPages.map((page) => (
                     <Link
                       key={page.name}
                       href={page.href}
@@ -317,7 +317,7 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
               }`}>
                 APPLICATION PAGES
               </p>
-              {appPages.map((page, index) => (
+              {appPages.map((page) => (
                 <Link
                   key={page.name}
                   href={page.href}

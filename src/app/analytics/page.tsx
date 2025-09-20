@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,11 +12,9 @@ import {
   Calendar,
   Download,
   Filter,
-  RefreshCw,
   AlertTriangle,
   CheckCircle,
   Info,
-  MapPin,
   Thermometer,
   Wind,
   Leaf,
@@ -80,37 +78,35 @@ export default function AnalyticsPage() {
 
   const [selectedMetric, setSelectedMetric] = useState<string>('temperature')
   const [timeRange, setTimeRange] = useState<string>('7d')
-  const [isLoading, setIsLoading] = useState(false)
+  // const [isLoading, setIsLoading] = useState(false)
 
-  const refreshData = () => {
-    setIsLoading(true)
-    setTimeout(() => {
-      // Simulate data refresh with slight variations
-      setAnalyticsData(prev => ({
-        temperature: {
-          ...prev.temperature,
-          current: prev.temperature.current + (Math.random() - 0.5) * 2,
-          trend: prev.temperature.trend + (Math.random() - 0.5) * 2
-        },
-        airQuality: {
-          ...prev.airQuality,
-          current: Math.max(0, Math.min(100, prev.airQuality.current + (Math.random() - 0.5) * 5)),
-          trend: prev.airQuality.trend + (Math.random() - 0.5) * 2
-        },
-        vegetation: {
-          ...prev.vegetation,
-          current: Math.max(0, Math.min(1, prev.vegetation.current + (Math.random() - 0.5) * 0.05)),
-          trend: prev.vegetation.trend + (Math.random() - 0.5) * 2
-        },
-        precipitation: {
-          ...prev.precipitation,
-          current: Math.max(0, prev.precipitation.current + (Math.random() - 0.5) * 3),
-          trend: prev.precipitation.trend + (Math.random() - 0.5) * 5
-        }
-      }))
-      setIsLoading(false)
-    }, 1500)
-  }
+  // Data refresh functionality can be added later
+  //   // Simulate data refresh with slight variations
+  //   setAnalyticsData(prev => ({
+  //     temperature: {
+  //       ...prev.temperature,
+  //       current: prev.temperature.current + (Math.random() - 0.5) * 2,
+  //       trend: prev.temperature.trend + (Math.random() - 0.5) * 2
+  //     },
+  //     airQuality: {
+  //       ...prev.airQuality,
+  //       current: Math.max(0, Math.min(100, prev.airQuality.current + (Math.random() - 0.5) * 5)),
+  //       trend: prev.airQuality.trend + (Math.random() - 0.5) * 2
+  //     },
+  //     vegetation: {
+  //       ...prev.vegetation,
+  //       current: Math.max(0, Math.min(1, prev.vegetation.current + (Math.random() - 0.5) * 0.05)),
+  //       trend: prev.vegetation.trend + (Math.random() - 0.5) * 2
+  //     },
+  //     precipitation: {
+  //       ...prev.precipitation,
+  //       current: Math.max(0, prev.precipitation.current + (Math.random() - 0.5) * 3),
+  //       trend: prev.precipitation.trend + (Math.random() - 0.5) * 5
+  //     }
+  //   }))
+  //   setIsLoading(false)
+  // }, 1500)
+  // }
 
   const getMetricIcon = (metric: string) => {
     switch (metric) {

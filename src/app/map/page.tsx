@@ -1,20 +1,16 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import InteractiveMap from "@/components/InteractiveMap"
 import { 
-  MapPin, 
   Layers, 
-  Satellite, 
   Thermometer, 
   Wind, 
   Droplets, 
   Leaf,
   Settings,
-  Info,
   ChevronDown
 } from "lucide-react"
 
@@ -46,8 +42,8 @@ export default function MapPage() {
     { id: 'precip', name: 'Precipitation', type: 'precipitation', visible: false, opacity: 0.5, color: 'cyan' }
   ])
 
-  const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 })
-  const [zoom, setZoom] = useState(10)
+  const [mapCenter] = useState({ lat: 40.7128, lng: -74.0060 })
+  const [zoom] = useState(10)
 
   const toggleLayer = (layerId: string) => {
     setLayers(layers.map(layer => 

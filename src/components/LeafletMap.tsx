@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { motion } from 'framer-motion'
 import { 
@@ -9,9 +9,7 @@ import {
   Wind, 
   Leaf, 
   Droplets,
-  MapPin,
   Satellite,
-  Layers,
   ZoomIn,
   ZoomOut,
   RotateCcw
@@ -19,7 +17,7 @@ import {
 
 // Fix for default markers in React-Leaflet
 if (typeof window !== 'undefined') {
-  delete (L.Icon.Default.prototype as any)._getIconUrl
+  delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -180,12 +178,10 @@ function NASALayer({ layer, visible, opacity }: {
 export default function LeafletMap({ 
   selectedLocation, 
   onLocationSelect, 
-  layers, 
-  onLayerToggle, 
-  onLayerOpacityChange 
+  layers
 }: LeafletMapProps) {
-  const [mapCenter, setMapCenter] = useState<[number, number]>([40.7128, -74.0060])
-  const [zoom, setZoom] = useState(10)
+  const [mapCenter] = useState<[number, number]>([40.7128, -74.0060])
+  const [zoom] = useState(10)
   const mapRef = useRef<L.Map>(null)
 
   const sampleLocations: LocationData[] = [

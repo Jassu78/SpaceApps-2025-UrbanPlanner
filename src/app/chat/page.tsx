@@ -3,21 +3,16 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { 
   Send, 
   Bot, 
   User, 
-  Sparkles, 
   MapPin, 
   Thermometer, 
   Wind, 
   Leaf,
   Droplets,
   BarChart3,
-  RefreshCw,
-  Trash2,
-  Settings,
   Lightbulb
 } from "lucide-react"
 
@@ -26,7 +21,7 @@ interface Message {
   type: 'user' | 'ai'
   content: string
   timestamp: Date
-  data?: any
+  data?: Record<string, unknown>
 }
 
 export default function ChatPage() {
@@ -72,7 +67,7 @@ export default function ChatPage() {
         type: 'ai',
         content: aiResponse.content,
         timestamp: new Date(),
-        data: aiResponse.data
+        data: aiResponse.data || undefined
       }
       setMessages(prev => [...prev, aiMessage])
       setIsTyping(false)
@@ -155,14 +150,14 @@ export default function ChatPage() {
     }
   }
 
-  const clearChat = () => {
-    setMessages([{
-      id: '1',
-      type: 'ai',
-      content: "Hello! I'm your NASA Climate AI assistant. I can help you analyze climate data, understand urban planning insights, and answer questions about environmental conditions. What would you like to know?",
-      timestamp: new Date()
-    }])
-  }
+  // const clearChat = () => {
+  //   setMessages([{
+  //     id: '1',
+  //     type: 'ai',
+  //     content: "Hello! I'm your NASA Climate AI assistant. I can help you analyze climate data, understand urban planning insights, and answer questions about environmental conditions. What would you like to know?",
+  //     timestamp: new Date()
+  //   }])
+  // }
 
   const getDataIcon = (type: string) => {
     switch (type) {
@@ -225,18 +220,18 @@ export default function ChatPage() {
                         {message.data && (
                           <div className="mt-3 p-3 bg-black/20 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
-                              {React.createElement(getDataIcon(message.data.type), {
-                                className: `w-4 h-4 ${getDataColor(message.data.type)}`
+                              {React.createElement(getDataIcon(message.data.type as string), {
+                                className: `w-4 h-4 ${getDataColor(message.data.type as string)}`
                               })}
                               <span className="text-white font-medium capitalize">
-                                {message.data.type.replace('_', ' ')}
+                                {(message.data.type as string).replace('_', ' ')}
                               </span>
                             </div>
                             <div className="text-2xl font-bold text-white">
-                              {message.data.value} {message.data.unit}
+                              {message.data.value as number} {message.data.unit as string}
                             </div>
                             <div className="text-sm text-gray-300">
-                              {message.data.trend}
+                              {message.data.trend as string}
                             </div>
                           </div>
                         )}

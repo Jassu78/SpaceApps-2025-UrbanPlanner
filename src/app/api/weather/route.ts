@@ -3,12 +3,35 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    // const coords = searchParams.get('coords') || '40.7128,-74.0060' // Default to NYC
+    const coords = searchParams.get('coords') || '40.7128,-74.0060'
     
-    // NOAA Weather API - no API key required
-    const weatherUrl = `https://api.weather.gov/gridpoints/TOP/31,80/forecast`
+    // Parse coordinates
+    const [lat, lon] = coords.split(',').map(Number)
     
-    const response = await fetch(weatherUrl, {
+    // NOAA Weather API - first get the gridpoint for the coordinates
+    const gridpointUrl = `https://api.weather.gov/points/${lat},${lon}`
+    
+    const gridpointResponse = await fetch(gridpointUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'UrbanPlanningDashboard/1.0 (contact@example.com)',
+      },
+    })
+    
+    if (!gridpointResponse.ok) {
+      throw new Error(`Gridpoint API error: ${gridpointResponse.status}`)
+    }
+    
+    const gridpointData = await gridpointResponse.json()
+    const forecastUrl = gridpointData.properties?.forecast
+    
+    if (!forecastUrl) {
+      throw new Error('No forecast URL found')
+    }
+    
+    // Get the forecast data
+    const response = await fetch(forecastUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -64,12 +87,23 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Weather API Error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch weather data',
-        message: error instanceof Error ? error.message : 'Unknown error'
+    
+    // Return fallback data instead of error
+    const fallbackData = {
+      temperature: 23.5,
+      humidity: 65,
+      precipitation: 5.2,
+      windSpeed: 12.3,
+      pressure: 1013.2,
+      description: 'Partly Cloudy',
+      timestamp: new Date().toISOString(),
+      source: 'Fallback Data (API Unavailable)'
+    }
+    
+    return NextResponse.json(fallbackData, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // 5 min cache for fallback
       },
-      { status: 500 }
-    )
+    })
   }
 }

@@ -237,7 +237,14 @@ export class APIClient {
   private baseUrl: string
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? '' : 'http://localhost:3000')
+    if (typeof window !== 'undefined') {
+      // Client-side: use relative URLs
+      this.baseUrl = ''
+    } else {
+      // Server-side: use full URL
+      this.baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    }
   }
 
   async fetchDashboardData(location: string = 'here', coords: string = '40.7128,-74.0060', country: string = 'USA'): Promise<ProcessedDashboardData> {

@@ -9,12 +9,16 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get('country') || 'USA'
     const bbox = searchParams.get('bbox') || '-74.1,40.7,-73.9,40.8'
     
+    // Get the base URL for internal API calls
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    
     // Fetch all data in parallel
     const [airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/waqi?location=${location}&coords=${coords}`),
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/weather?coords=${coords}`),
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/population?country=${country}`),
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/landsat?bbox=${bbox}`)
+      fetch(`${baseUrl}/api/waqi?location=${location}&coords=${coords}`),
+      fetch(`${baseUrl}/api/weather?coords=${coords}`),
+      fetch(`${baseUrl}/api/population?country=${country}`),
+      fetch(`${baseUrl}/api/landsat?bbox=${bbox}`)
     ])
 
     // Process results

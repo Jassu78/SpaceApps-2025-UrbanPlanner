@@ -25,7 +25,7 @@ export default function OpenStreetMapView({
   }, [])
 
   useEffect(() => {
-    if (!isClient || hasError || !mapRef.current || mapError) return
+    if (!isClient || hasError || mapError || !mapRef.current) return
 
     // Dynamically import Leaflet only on client side
     const initializeMap = async () => {
@@ -41,7 +41,7 @@ export default function OpenStreetMapView({
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         })
 
-        // Create map
+        // Create map using the container
         const map = L.map(mapRef.current!).setView(coordinates, zoom)
         mapInstanceRef.current = map
 

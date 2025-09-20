@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { APIClient } from '@/lib/dataProcessing'
 import ClimateTrendsChart from '@/components/ClimateTrendsChart'
+import OpenStreetMapView from '@/components/OpenStreetMapView'
 
 interface DashboardData {
   airQuality: {
@@ -490,28 +491,12 @@ export default function DashboardPage() {
                   <MapPin className="w-6 h-6 text-green-400" />
                   <h3 className="text-xl font-semibold text-white">Satellite View</h3>
                 </div>
-                <div className="h-64 bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-lg flex items-center justify-center border border-white/10">
-                  <div className="text-center">
-                    {dashboardData.satellite?.hasError ? (
-                      <>
-                        <AlertTriangle className="w-16 h-16 text-yellow-400/50 mx-auto mb-2" />
-                        <p className="text-yellow-300/70">Satellite data temporarily unavailable</p>
-                        <p className="text-yellow-300/50 text-sm">Landsat API connection issue</p>
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="w-16 h-16 text-green-400/50 mx-auto mb-2" />
-                        <p className="text-green-300/70">Interactive satellite map</p>
-                        <p className="text-green-300/50 text-sm">Real-time NASA imagery</p>
-                        {dashboardData.satellite?.availableBands && dashboardData.satellite.availableBands.length > 0 && (
-                          <div className="text-xs text-gray-400 mt-2">
-                            Available bands: {dashboardData.satellite.availableBands.join(', ')}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
+                <OpenStreetMapView
+                  coordinates={[40.7128, -74.0060]} // NYC coordinates
+                  zoom={13}
+                  hasError={false} // OpenStreetMap should work independently of Landsat data
+                  className="h-64 w-full rounded-lg"
+                />
               </CardContent>
             </Card>
           </motion.div>

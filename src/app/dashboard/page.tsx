@@ -18,6 +18,7 @@ import {
   Loader2
 } from "lucide-react"
 import { APIClient } from '@/lib/dataProcessing'
+import ClimateTrendsChart from '@/components/ClimateTrendsChart'
 
 interface DashboardData {
   airQuality: {
@@ -32,6 +33,7 @@ interface DashboardData {
       co: number
       so2: number
     }
+    lastUpdated?: string
   } | null
   weather: {
     temperature: number
@@ -40,6 +42,7 @@ interface DashboardData {
     precipitation: number
     forecast: string
     heatIndex: number
+    lastUpdated?: string
   } | null
   population: {
     density: number
@@ -456,12 +459,20 @@ export default function DashboardPage() {
                   <BarChart3 className="w-6 h-6 text-blue-400" />
                   <h3 className="text-xl font-semibold text-white">Climate Trends</h3>
                 </div>
-                <div className="h-64 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-lg flex items-center justify-center border border-white/10">
-                  <div className="text-center">
-                    <BarChart3 className="w-16 h-16 text-blue-400/50 mx-auto mb-2" />
-                    <p className="text-blue-300/70">Interactive climate trends chart</p>
-                    <p className="text-blue-300/50 text-sm">NASA MODIS & Landsat data</p>
-                  </div>
+                <div className="h-64 w-full">
+                  <ClimateTrendsChart 
+                    weatherData={dashboardData.weather ? {
+                      temperature: dashboardData.weather.temperature,
+                      humidity: dashboardData.weather.humidity,
+                      precipitation: dashboardData.weather.precipitation,
+                      timestamp: dashboardData.weather.lastUpdated || new Date().toISOString()
+                    } : null}
+                    airQualityData={dashboardData.airQuality ? {
+                      aqi: dashboardData.airQuality.aqi,
+                      pollutants: dashboardData.airQuality.pollutants,
+                      timestamp: dashboardData.airQuality.lastUpdated || new Date().toISOString()
+                    } : null}
+                  />
                 </div>
               </CardContent>
             </Card>

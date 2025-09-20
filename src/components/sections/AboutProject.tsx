@@ -125,7 +125,7 @@ export const AboutProject = ({ isDeepSpace = false }: AboutProjectProps) => {
                 : 'bg-purple-100 text-purple-800 hover:bg-purple-200'
             }`}>
               <Zap className="w-4 h-4 mr-2" />
-              NASA Space Apps Challenge 2024
+              NASA Space Apps Challenge 2025
             </Badge>
           </motion.div>
           

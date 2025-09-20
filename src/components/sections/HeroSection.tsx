@@ -3,19 +3,35 @@
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Sparkles, Globe, Brain } from "lucide-react"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 interface HeroSectionProps {
   isDeepSpace?: boolean
 }
 
 export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
+  const router = useRouter()
+
+  const handleLaunchApp = () => {
+    router.push('/dashboard')
+  }
+
+  const handleViewDemo = () => {
+    router.push('/demo')
+  }
 
   return (
-    <section className={`relative min-h-screen flex items-center justify-center overflow-hidden font-poppins transition-all duration-1000 pt-16 ${
+    <section className={`relative min-h-screen flex items-center justify-center overflow-hidden font-poppins transition-all duration-1000 ${
       isDeepSpace 
         ? 'deep-space-hero' 
         : 'moonlight-hero'
     }`}>
+      {/* Background that covers entire viewport */}
+      <div className={`absolute inset-0 ${
+        isDeepSpace 
+          ? 'deep-space-hero' 
+          : 'moonlight-hero'
+      }`}></div>
       {/* Animated Background Elements */}
       <div className="absolute inset-0" suppressHydrationWarning>
         {/* Floating geometric shapes with improved animations */}
@@ -133,7 +149,7 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
         })}
       </div>
 
-      <div className="relative z-10 text-center max-w-6xl mx-auto px-6">
+      <div className="relative z-10 text-center max-w-6xl mx-auto px-6 pt-20">
 
         {/* Staggered text animations */}
         <motion.div 
@@ -226,6 +242,7 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
           >
             <Button 
               size="lg" 
+              onClick={handleLaunchApp}
               className={`px-8 py-4 text-lg font-semibold rounded-full shadow-2xl transition-all duration-300 font-poppins group relative overflow-hidden ${
                 isDeepSpace
                   ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white hover:shadow-cyan-500/25'
@@ -257,6 +274,7 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
             <Button 
               variant="outline" 
               size="lg"
+              onClick={handleViewDemo}
               className={`px-8 py-4 text-lg font-semibold rounded-full backdrop-blur-sm font-poppins group relative overflow-hidden transition-all duration-300 ${
                 isDeepSpace
                   ? 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/50'

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
+import { useRouter } from 'next/navigation'
 import { 
   ArrowRight, 
   ExternalLink, 
@@ -22,32 +23,50 @@ interface DemoSectionProps {
 }
 
 export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
+  const router = useRouter()
+
   const demoFeatures = [
     {
       icon: Map,
       title: "Interactive Mapping",
       description: "Explore urban areas with real-time NASA satellite data",
-      color: "blue"
+      color: "blue",
+      route: "/dashboard"
     },
     {
       icon: BarChart3,
       title: "Data Visualization",
       description: "Comprehensive analytics and climate insights",
-      color: "green"
+      color: "green",
+      route: "/dashboard"
     },
     {
       icon: MessageSquare,
       title: "AI Chat Assistant",
       description: "Get instant answers about urban planning",
-      color: "purple"
+      color: "purple",
+      route: "/dashboard"
     },
     {
       icon: Zap,
       title: "Real-time Analysis",
       description: "Live climate data and predictive modeling",
-      color: "orange"
+      color: "orange",
+      route: "/dashboard"
     }
   ]
+
+  const handleFeatureClick = (route: string) => {
+    router.push('/dashboard')
+  }
+
+  const handleLaunchDemo = () => {
+    router.push('/dashboard')
+  }
+
+  const handleViewSource = () => {
+    router.push('/dashboard')
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -217,9 +236,10 @@ export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
               <div className="grid md:grid-cols-2 gap-8">
                 {/* Map Interface */}
                 <motion.div 
-                  className="space-y-4"
+                  className="space-y-4 cursor-pointer"
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
+                  onClick={() => router.push('/dashboard')}
                 >
                   <div className="flex items-center gap-2 mb-4">
                     <Map className={`w-6 h-6 ${
@@ -251,9 +271,10 @@ export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
 
                 {/* Analytics Dashboard */}
                 <motion.div 
-                  className="space-y-4"
+                  className="space-y-4 cursor-pointer"
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
+                  onClick={() => router.push('/dashboard')}
                 >
                   <div className="flex items-center gap-2 mb-4">
                     <BarChart3 className={`w-6 h-6 ${
@@ -302,6 +323,7 @@ export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
               whileHover={{ 
                 y: -10
               }}
+              onClick={() => handleFeatureClick(feature.route)}
             >
               <Card className={`group hover:shadow-2xl transition-all duration-300 border-0 h-full cursor-pointer relative overflow-hidden ${
                 isDeepSpace 
@@ -356,6 +378,7 @@ export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
             >
               <Button 
                 size="lg" 
+                onClick={handleLaunchDemo}
                 className={`px-8 py-4 text-lg font-semibold rounded-full shadow-2xl transition-all duration-300 font-['Poppins'] group relative overflow-hidden ${
                   isDeepSpace
                     ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white hover:shadow-cyan-500/25'
@@ -387,6 +410,7 @@ export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
               <Button 
                 variant="outline" 
                 size="lg"
+                onClick={handleViewSource}
                 className={`px-8 py-4 text-lg font-semibold rounded-full backdrop-blur-sm font-['Poppins'] group relative overflow-hidden transition-all duration-300 ${
                   isDeepSpace
                     ? 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/50'
@@ -428,7 +452,7 @@ export const DemoSection = ({ isDeepSpace = false }: DemoSectionProps) => {
           >
             <Award className="w-4 h-4" />
             <span className="text-sm font-medium">
-              NASA Space Apps Challenge 2024
+              NASA Space Apps Challenge 2025
             </span>
           </motion.div>
         </motion.div>

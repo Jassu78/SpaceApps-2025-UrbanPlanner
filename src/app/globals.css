@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -208,5 +209,35 @@
         /* Ensure smooth scrolling without overscroll effects */
         * {
           overscroll-behavior: none;
+        }
+
+        /* Leaflet Map Customizations */
+        .leaflet-container {
+          background: #1e293b !important;
+        }
+
+        /* Fix white background behind navbar */
+        body {
+          background: #1e293b !important;
+        }
+
+        html {
+          background: #1e293b !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .leaflet-popup-tip {
+          background: rgba(255, 255, 255, 0.95);
+        }
+
+        .custom-marker {
+          background: transparent !important;
+          border: none !important;
         }
 }

@@ -20,6 +20,7 @@ import {
 import { APIClient } from '@/lib/dataProcessing'
 import ClimateTrendsChart from '@/components/ClimateTrendsChart'
 import OpenStreetMapView from '@/components/OpenStreetMapView'
+import Link from 'next/link'
 
 interface DashboardData {
   airQuality: {
@@ -511,29 +512,29 @@ export default function DashboardPage() {
           <Card className="bg-white/10 backdrop-blur-sm border-white/20">
             <CardContent className="p-6">
               <h3 className="text-xl font-semibold text-white mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button className="p-4 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 transition-colors border border-blue-500/30">
-                  <div className="text-center">
-                    <MapPin className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                    <p className="text-white font-medium">View Map</p>
-                    <p className="text-blue-300/70 text-sm">Interactive satellite view</p>
-                  </div>
-                </button>
-                <button className="p-4 rounded-lg bg-green-500/20 hover:bg-green-500/30 transition-colors border border-green-500/30">
-                  <div className="text-center">
-                    <BarChart3 className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                    <p className="text-white font-medium">Analytics</p>
-                    <p className="text-green-300/70 text-sm">Detailed data analysis</p>
-                  </div>
-                </button>
-                <button className="p-4 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-colors border border-purple-500/30">
-                  <div className="text-center">
-                    <Activity className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                    <p className="text-white font-medium">AI Chat</p>
-                    <p className="text-purple-300/70 text-sm">Ask questions about data</p>
-                  </div>
-                </button>
-              </div>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <Link href="/map" className="p-4 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 transition-colors border border-blue-500/30 block">
+                         <div className="text-center">
+                           <MapPin className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                           <p className="text-white font-medium">View Map</p>
+                           <p className="text-blue-300/70 text-sm">Interactive satellite view</p>
+                         </div>
+                       </Link>
+                       <Link href="/analytics" className="p-4 rounded-lg bg-green-500/20 hover:bg-green-500/30 transition-colors border border-green-500/30 block">
+                         <div className="text-center">
+                           <BarChart3 className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                           <p className="text-white font-medium">Analytics</p>
+                           <p className="text-green-300/70 text-sm">Detailed data analysis</p>
+                         </div>
+                       </Link>
+                       <Link href="/chat" className="p-4 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-colors border border-purple-500/30 block">
+                         <div className="text-center">
+                           <Activity className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                           <p className="text-white font-medium">AI Chat</p>
+                           <p className="text-purple-300/70 text-sm">Ask questions about data</p>
+                         </div>
+                       </Link>
+                     </div>
             </CardContent>
           </Card>
         </motion.div>

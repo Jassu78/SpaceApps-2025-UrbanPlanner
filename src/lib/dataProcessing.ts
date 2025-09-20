@@ -237,7 +237,7 @@ export class APIClient {
   private baseUrl: string
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ''
+    this.baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? '' : 'http://localhost:3000')
   }
 
   async fetchDashboardData(location: string = 'here', coords: string = '40.7128,-74.0060', country: string = 'USA'): Promise<ProcessedDashboardData> {

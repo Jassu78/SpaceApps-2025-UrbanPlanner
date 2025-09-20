@@ -13,19 +13,72 @@ export async function GET(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
     
-    // Fetch all data in parallel
-    const [airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
-      fetch(`${baseUrl}/api/waqi?location=${location}&coords=${coords}`),
-      fetch(`${baseUrl}/api/weather?coords=${coords}`),
-      fetch(`${baseUrl}/api/population?country=${country}`),
-      fetch(`${baseUrl}/api/landsat?bbox=${bbox}`)
-    ])
+    console.log('Dashboard API - Base URL:', baseUrl)
+    console.log('Dashboard API - Coords:', coords)
+    console.log('Dashboard API - Vercel URL:', process.env.VERCEL_URL)
+    
+    // Try to fetch data with fallback to relative URLs if absolute URLs fail
+    let airQualityRes, weatherRes, populationRes, landsatRes
+    
+    try {
+      // First try with absolute URLs
+      [airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
+        fetch(`${baseUrl}/api/waqi?location=${location}&coords=${coords}`),
+        fetch(`${baseUrl}/api/weather?coords=${coords}`),
+        fetch(`${baseUrl}/api/population?country=${country}`),
+        fetch(`${baseUrl}/api/landsat?bbox=${bbox}`)
+      ])
+    } catch (error) {
+      console.log('Absolute URL fetch failed, trying relative URLs:', error)
+      // Fallback to relative URLs
+      const fallbackResults = await Promise.allSettled([
+        fetch(`/api/waqi?location=${location}&coords=${coords}`),
+        fetch(`/api/weather?coords=${coords}`),
+        fetch(`/api/population?country=${country}`),
+        fetch(`/api/landsat?bbox=${bbox}`)
+      ])
+      airQualityRes = fallbackResults[0]
+      weatherRes = fallbackResults[1]
+      populationRes = fallbackResults[2]
+      landsatRes = fallbackResults[3]
+    }
+    
+    console.log('Dashboard API - Fetch results:', {
+      airQuality: airQualityRes.status,
+      weather: weatherRes.status,
+      population: populationRes.status,
+      landsat: landsatRes.status
+    })
 
-    // Process results
-    const airQuality = airQualityRes.status === 'fulfilled' ? await airQualityRes.value.json() as Record<string, unknown> : null
-    const weather = weatherRes.status === 'fulfilled' ? await weatherRes.value.json() as Record<string, unknown> : null
-    const population = populationRes.status === 'fulfilled' ? await populationRes.value.json() as Record<string, unknown> : null
-    const landsat = landsatRes.status === 'fulfilled' ? await landsatRes.value.json() as Record<string, unknown> : null
+    // Process results with error handling
+    let airQuality = null
+    let weather = null
+    let population = null
+    let landsat = null
+
+    try {
+      airQuality = airQualityRes.status === 'fulfilled' ? await airQualityRes.value.json() as Record<string, unknown> : null
+    } catch (error) {
+      console.error('Air Quality API error:', error)
+    }
+
+    try {
+      weather = weatherRes.status === 'fulfilled' ? await weatherRes.value.json() as Record<string, unknown> : null
+    } catch (error) {
+      console.error('Weather API error:', error)
+    }
+
+    try {
+      population = populationRes.status === 'fulfilled' ? await populationRes.value.json() as Record<string, unknown> : null
+    } catch (error) {
+      console.error('Population API error:', error)
+    }
+
+    try {
+      landsat = landsatRes.status === 'fulfilled' ? await landsatRes.value.json() as Record<string, unknown> : null
+    } catch (error) {
+      console.error('Landsat API error:', error)
+    }
 
     // Calculate derived metrics
     const processedData = {

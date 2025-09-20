@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,48 +8,175 @@ import {
   MapPin, 
   Thermometer, 
   Wind, 
-  Droplets, 
   Leaf, 
   Activity,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
-  Clock,
-  BarChart3
+  BarChart3,
+  RefreshCw,
+  Loader2
 } from "lucide-react"
+import { APIClient } from '@/lib/dataProcessing'
 
-interface ClimateData {
-  temperature: number
-  airQuality: number
-  humidity: number
-  vegetation: number
-  precipitation: number
-  timestamp: string
+interface DashboardData {
+  airQuality: {
+    aqi: number
+    status: string
+    healthImpact: string
+    pollutants: {
+      pm25: number
+      pm10: number
+      no2: number
+      o3: number
+      co: number
+      so2: number
+    }
+  } | null
+  weather: {
+    temperature: number
+    humidity: number
+    windSpeed: string
+    precipitation: number
+    forecast: string
+    heatIndex: number
+  } | null
+  population: {
+    density: number
+    growthRate: number | null
+    yearRange: {
+      start: number
+      end: number
+    }
+  } | null
+  satellite: {
+    latestImage: Record<string, unknown>
+    cloudCover: number
+    platform: string
+    availableBands: string[]
+    hasError: boolean
+    ndvi?: number
+    health?: string
+  } | null
+  metrics: {
+    urbanHeatIsland: Record<string, unknown>
+    vegetationHealth: Record<string, unknown>
+    airQualityScore: number
+    populationDensity: number
+    environmentalHealth: number
+  }
 }
 
 export default function DashboardPage() {
-  const [climateData, setClimateData] = useState<ClimateData>({
-    temperature: 24.5,
-    airQuality: 85,
-    humidity: 65,
-    vegetation: 0.72,
-    precipitation: 12.3,
-    timestamp: new Date().toISOString()
-  })
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  // Data refresh functionality can be added later
+  const apiClient = useMemo(() => new APIClient(), [])
+
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const data = await apiClient.fetchDashboardData()
+      setDashboardData(data)
+      setLastUpdated(new Date())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data')
+      console.error('Dashboard fetch error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [apiClient])
+
+  useEffect(() => {
+    fetchDashboardData()
+    
+    // Refresh every 15 minutes
+    const interval = setInterval(fetchDashboardData, 15 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [fetchDashboardData])
 
   const getAirQualityStatus = (aqi: number) => {
-    if (aqi >= 80) return { status: 'Good', color: 'green', icon: CheckCircle }
-    if (aqi >= 60) return { status: 'Moderate', color: 'yellow', icon: AlertTriangle }
-    return { status: 'Poor', color: 'red', icon: AlertTriangle }
+    if (aqi <= 50) return { status: 'Good', color: 'green', icon: CheckCircle }
+    if (aqi <= 100) return { status: 'Moderate', color: 'yellow', icon: AlertTriangle }
+    if (aqi <= 150) return { status: 'Unhealthy for Sensitive Groups', color: 'orange', icon: AlertTriangle }
+    if (aqi <= 200) return { status: 'Unhealthy', color: 'red', icon: AlertTriangle }
+    if (aqi <= 300) return { status: 'Very Unhealthy', color: 'purple', icon: AlertTriangle }
+    return { status: 'Hazardous', color: 'maroon', icon: AlertTriangle }
   }
 
-  const airQualityStatus = getAirQualityStatus(climateData.airQuality)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading dashboard data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <p className="text-white text-lg mb-4">Error loading dashboard data</p>
+          <p className="text-gray-300 mb-4">{error}</p>
+          <button 
+            onClick={fetchDashboardData}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white text-lg">No data available</p>
+        </div>
+      </div>
+    )
+  }
+
+  const airQualityStatus = getAirQualityStatus(dashboardData.airQuality?.aqi || 0)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-20">
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header with Refresh Button */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Urban Planning Dashboard</h1>
+            <p className="text-gray-300">
+              Real-time environmental and demographic data for urban planning
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            {lastUpdated && (
+              <div className="text-sm text-gray-400">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </div>
+            )}
+            <button
+              onClick={fetchDashboardData}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+        </div>
+
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Temperature Card */}
@@ -70,14 +197,22 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-3xl font-bold text-white">
-                    {climateData.temperature.toFixed(1)}°C
+                    {dashboardData.weather?.temperature ? 
+                      `${dashboardData.weather.temperature.toFixed(1)}°C` : 
+                      'N/A'
+                    }
                   </h3>
                   <p className="text-gray-300 text-sm">
-                    Land Surface Temperature
+                    {dashboardData.weather?.heatIndex ? 
+                      `Heat Index: ${dashboardData.weather.heatIndex.toFixed(1)}°C` : 
+                      'Land Surface Temperature'
+                    }
                   </p>
                   <div className="flex items-center gap-2 text-sm">
                     <TrendingUp className="w-4 h-4 text-green-400" />
-                    <span className="text-green-400">+0.3°C from yesterday</span>
+                    <span className="text-green-400">
+                      {dashboardData.weather?.forecast || 'Real-time data'}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -99,15 +234,21 @@ export default function DashboardPage() {
                   <Badge className={`${
                     airQualityStatus.color === 'green' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
                     airQualityStatus.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
-                    'bg-red-500/20 text-red-300 border-red-500/30'
+                    airQualityStatus.color === 'orange' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+                    airQualityStatus.color === 'red' ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+                    airQualityStatus.color === 'purple' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                    'bg-maroon-500/20 text-maroon-300 border-maroon-500/30'
                   }`}>
                     Air Quality
                   </Badge>
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-3xl font-bold text-white">
-                    {climateData.airQuality.toFixed(0)}
-                  </h3>
+                        <h3 className="text-3xl font-bold text-white">
+                          {dashboardData.airQuality?.aqi !== undefined ?
+                            dashboardData.airQuality.aqi.toFixed(0) :
+                            'N/A'
+                          }
+                        </h3>
                   <p className="text-gray-300 text-sm">
                     Air Quality Index
                   </p>
@@ -117,6 +258,13 @@ export default function DashboardPage() {
                       {airQualityStatus.status}
                     </span>
                   </div>
+                  {dashboardData.airQuality?.pollutants && (
+                    <div className="text-xs text-gray-400 mt-2">
+                      PM2.5: {dashboardData.airQuality.pollutants.pm25} | 
+                      PM10: {dashboardData.airQuality.pollutants.pm10} | 
+                      NO₂: {dashboardData.airQuality.pollutants.no2}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -139,22 +287,33 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-3xl font-bold text-white">
-                    {(climateData.vegetation * 100).toFixed(1)}%
-                  </h3>
-                  <p className="text-gray-300 text-sm">
-                    NDVI Index
-                  </p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <TrendingUp className="w-4 h-4 text-green-400" />
-                    <span className="text-green-400">Healthy growth</span>
-                  </div>
+                        <h3 className="text-3xl font-bold text-white">
+                          {dashboardData.satellite?.ndvi ?
+                            `${(dashboardData.satellite.ndvi * 100).toFixed(1)}%` :
+                            'N/A'
+                          }
+                        </h3>
+                        <p className="text-gray-300 text-sm">
+                          NDVI Index
+                        </p>
+                        <div className="flex items-center gap-2 text-sm">
+                          <TrendingUp className="w-4 h-4 text-green-400" />
+                          <span className="text-green-400">
+                            {dashboardData.satellite?.health || 'Satellite data'}
+                          </span>
+                        </div>
+                  {dashboardData.satellite?.cloudCover && (
+                    <div className="text-xs text-gray-400 mt-2">
+                      Cloud Cover: {dashboardData.satellite.cloudCover.toFixed(1)}% | 
+                      Platform: {dashboardData.satellite.platform}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Precipitation Card */}
+          {/* Population Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -163,23 +322,119 @@ export default function DashboardPage() {
             <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-cyan-500/20 rounded-lg">
-                    <Droplets className="w-6 h-6 text-cyan-400" />
+                  <div className="p-3 bg-purple-500/20 rounded-lg">
+                    <Activity className="w-6 h-6 text-purple-400" />
                   </div>
-                  <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
-                    Precipitation
+                  <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                    Population
                   </Badge>
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-3xl font-bold text-white">
-                    {climateData.precipitation.toFixed(1)}mm
+                    {dashboardData.population?.density ? 
+                      `${dashboardData.population.density.toLocaleString()}` : 
+                      'N/A'
+                    }
                   </h3>
                   <p className="text-gray-300 text-sm">
-                    Last 24 hours
+                    Population Density
                   </p>
                   <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-blue-400" />
-                    <span className="text-blue-400">Updated 2 min ago</span>
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    <span className="text-purple-400">
+                      {dashboardData.population?.growthRate ? 
+                        `Growth: ${dashboardData.population.growthRate.toFixed(1)}%` : 
+                        'WorldPop Data'
+                      }
+                    </span>
+                  </div>
+                  {dashboardData.population?.yearRange && (
+                    <div className="text-xs text-gray-400 mt-2">
+                      Data Range: {dashboardData.population.yearRange.start}-{dashboardData.population.yearRange.end}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Urban Planning Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Environmental Health Score */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Activity className="w-6 h-6 text-green-400" />
+                  <h3 className="text-lg font-semibold text-white">Environmental Health</h3>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-white mb-2">
+                    {dashboardData.metrics?.environmentalHealth || 'N/A'}
+                  </div>
+                  <div className="text-sm text-gray-300 mb-4">Overall Score (0-100)</div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-red-500 to-green-500 h-2 rounded-full transition-all duration-1000"
+                      style={{ width: `${dashboardData.metrics?.environmentalHealth || 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Urban Heat Island */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Thermometer className="w-6 h-6 text-orange-400" />
+                  <h3 className="text-lg font-semibold text-white">Urban Heat Island</h3>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-white mb-2">
+                    {(dashboardData.metrics?.urbanHeatIsland?.level as string) || 'N/A'}
+                  </div>
+                  <div className="text-sm text-gray-300 mb-4">
+                    Intensity: {(dashboardData.metrics?.urbanHeatIsland?.intensity as number) || 'N/A'}°C
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    Based on land surface temperature analysis
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Air Quality Score */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Wind className="w-6 h-6 text-blue-400" />
+                  <h3 className="text-lg font-semibold text-white">Air Quality Score</h3>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-white mb-2">
+                    {dashboardData.metrics?.airQualityScore || 'N/A'}
+                  </div>
+                  <div className="text-sm text-gray-300 mb-4">Score (0-100)</div>
+                  <div className="text-xs text-gray-400">
+                    Based on AQI and pollutant levels
                   </div>
                 </div>
               </CardContent>
@@ -193,7 +448,7 @@ export default function DashboardPage() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
           >
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardContent className="p-6">
@@ -216,7 +471,7 @@ export default function DashboardPage() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
           >
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardContent className="p-6">
@@ -226,9 +481,24 @@ export default function DashboardPage() {
                 </div>
                 <div className="h-64 bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-lg flex items-center justify-center border border-white/10">
                   <div className="text-center">
-                    <MapPin className="w-16 h-16 text-green-400/50 mx-auto mb-2" />
-                    <p className="text-green-300/70">Interactive satellite map</p>
-                    <p className="text-green-300/50 text-sm">Real-time NASA imagery</p>
+                    {dashboardData.satellite?.hasError ? (
+                      <>
+                        <AlertTriangle className="w-16 h-16 text-yellow-400/50 mx-auto mb-2" />
+                        <p className="text-yellow-300/70">Satellite data temporarily unavailable</p>
+                        <p className="text-yellow-300/50 text-sm">Landsat API connection issue</p>
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-16 h-16 text-green-400/50 mx-auto mb-2" />
+                        <p className="text-green-300/70">Interactive satellite map</p>
+                        <p className="text-green-300/50 text-sm">Real-time NASA imagery</p>
+                        {dashboardData.satellite?.availableBands && dashboardData.satellite.availableBands.length > 0 && (
+                          <div className="text-xs text-gray-400 mt-2">
+                            Available bands: {dashboardData.satellite.availableBands.join(', ')}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>

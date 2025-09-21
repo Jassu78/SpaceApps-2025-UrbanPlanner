@@ -11,16 +11,20 @@ import {
   Droplets, 
   Leaf,
   Settings,
-  ChevronDown
+  ChevronDown,
+  Flame,
+  Sun
 } from "lucide-react"
 
 interface MapLayer {
   id: string
   name: string
-  type: 'temperature' | 'air_quality' | 'vegetation' | 'precipitation'
+  type: 'temperature' | 'air_quality' | 'vegetation' | 'precipitation' | 'fire' | 'albedo'
   visible: boolean
   opacity: number
   color: string
+  nasaProduct?: string
+  nasaType?: string
 }
 
 interface LocationData {
@@ -31,15 +35,21 @@ interface LocationData {
   airQuality: number
   vegetation: number
   precipitation: number
+  fire?: number
+  albedo?: number
+  cloudCover?: number
+  lastUpdated?: string
 }
 
 export default function MapPage() {
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null)
   const [layers, setLayers] = useState<MapLayer[]>([
-    { id: 'temp', name: 'Temperature', type: 'temperature', visible: true, opacity: 0.8, color: 'orange' },
+    { id: 'temp', name: 'Temperature', type: 'temperature', visible: true, opacity: 0.8, color: 'orange', nasaProduct: 'MOD11A1', nasaType: 'temperature' },
     { id: 'air', name: 'Air Quality', type: 'air_quality', visible: true, opacity: 0.7, color: 'blue' },
-    { id: 'veg', name: 'Vegetation', type: 'vegetation', visible: true, opacity: 0.6, color: 'green' },
-    { id: 'precip', name: 'Precipitation', type: 'precipitation', visible: false, opacity: 0.5, color: 'cyan' }
+    { id: 'veg', name: 'Vegetation', type: 'vegetation', visible: true, opacity: 0.6, color: 'green', nasaProduct: 'MCD43A4', nasaType: 'vegetation' },
+    { id: 'precip', name: 'Precipitation', type: 'precipitation', visible: false, opacity: 0.5, color: 'cyan' },
+    { id: 'fire', name: 'Fire Detection', type: 'fire', visible: false, opacity: 0.7, color: 'red', nasaProduct: 'MOD14', nasaType: 'fire' },
+    { id: 'albedo', name: 'Surface Albedo', type: 'albedo', visible: false, opacity: 0.6, color: 'yellow', nasaProduct: 'MCD43A3', nasaType: 'albedo' }
   ])
 
   const [mapCenter] = useState({ lat: 40.7128, lng: -74.0060 })
@@ -63,6 +73,8 @@ export default function MapPage() {
       case 'air_quality': return Wind
       case 'vegetation': return Leaf
       case 'precipitation': return Droplets
+      case 'fire': return Flame
+      case 'albedo': return Sun
       default: return Layers
     }
   }
@@ -72,7 +84,9 @@ export default function MapPage() {
       orange: 'text-orange-400',
       blue: 'text-blue-400',
       green: 'text-green-400',
-      cyan: 'text-cyan-400'
+      cyan: 'text-cyan-400',
+      red: 'text-red-400',
+      yellow: 'text-yellow-400'
     }
     return colors[color as keyof typeof colors] || 'text-gray-400'
   }
@@ -197,6 +211,40 @@ export default function MapPage() {
                         </div>
                         <span className="text-white font-medium">{selectedLocation.precipitation}mm</span>
                       </div>
+                      {selectedLocation.fire !== undefined && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Flame className="w-4 h-4 text-red-400" />
+                            <span className="text-gray-300 text-sm">Fire Detection</span>
+                          </div>
+                          <span className="text-white font-medium">{selectedLocation.fire} alerts</span>
+                        </div>
+                      )}
+                      {selectedLocation.albedo !== undefined && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sun className="w-4 h-4 text-yellow-400" />
+                            <span className="text-gray-300 text-sm">Surface Albedo</span>
+                          </div>
+                          <span className="text-white font-medium">{selectedLocation.albedo}%</span>
+                        </div>
+                      )}
+                      {selectedLocation.cloudCover !== undefined && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400">☁️</span>
+                            <span className="text-gray-300 text-sm">Cloud Cover</span>
+                          </div>
+                          <span className="text-white font-medium">{selectedLocation.cloudCover}%</span>
+                        </div>
+                      )}
+                      {selectedLocation.lastUpdated && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <div className="text-xs text-gray-400">
+                            Last updated: {new Date(selectedLocation.lastUpdated).toLocaleString()}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

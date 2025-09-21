@@ -83,13 +83,19 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
           }}
         />
         
-        {/* Floating geometric particles with improved animation */}
+        {/* Floating geometric particles with fixed positions to avoid hydration issues */}
         {[...Array(15)].map((_, i) => {
-          // Generate random positions once on mount to avoid hydration issues
-          const randomLeft = Math.random() * 100;
-          const randomTop = Math.random() * 100;
-          const randomDuration = 3 + Math.random() * 2;
-          const randomDelay = Math.random() * 5;
+          // Use fixed positions based on index to avoid hydration issues
+          const positions = [
+            { left: 10, top: 20 }, { left: 30, top: 40 }, { left: 50, top: 10 },
+            { left: 70, top: 30 }, { left: 90, top: 50 }, { left: 20, top: 60 },
+            { left: 40, top: 80 }, { left: 60, top: 70 }, { left: 80, top: 90 },
+            { left: 15, top: 35 }, { left: 35, top: 55 }, { left: 55, top: 25 },
+            { left: 75, top: 45 }, { left: 95, top: 65 }, { left: 25, top: 85 }
+          ];
+          const pos = positions[i] || { left: 50, top: 50 };
+          const randomDuration = 3 + (i % 3);
+          const randomDelay = i * 0.3;
           
           return (
             <motion.div
@@ -100,8 +106,8 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
                   : 'w-2 h-2 bg-white/30'
               }`}
               style={{
-                left: `${randomLeft}%`,
-                top: `${randomTop}%`,
+                left: `${pos.left}%`,
+                top: `${pos.top}%`,
               }}
               animate={{
                 opacity: [0, 1, 0],
@@ -120,19 +126,27 @@ export const HeroSection = ({ isDeepSpace = false }: HeroSectionProps) => {
 
         {/* Deep space cosmic dust */}
         {isDeepSpace && [...Array(20)].map((_, i) => {
-          // Generate random positions once on mount to avoid hydration issues
-          const randomLeft = Math.random() * 100;
-          const randomTop = Math.random() * 100;
-          const randomDuration = 4 + Math.random() * 2;
-          const randomDelay = Math.random() * 10;
+          // Use fixed positions based on index to avoid hydration issues
+          const dustPositions = [
+            { left: 5, top: 15 }, { left: 25, top: 35 }, { left: 45, top: 5 },
+            { left: 65, top: 25 }, { left: 85, top: 45 }, { left: 10, top: 55 },
+            { left: 30, top: 75 }, { left: 50, top: 65 }, { left: 70, top: 85 },
+            { left: 90, top: 95 }, { left: 15, top: 25 }, { left: 35, top: 45 },
+            { left: 55, top: 15 }, { left: 75, top: 35 }, { left: 95, top: 55 },
+            { left: 20, top: 75 }, { left: 40, top: 95 }, { left: 60, top: 5 },
+            { left: 80, top: 25 }, { left: 100, top: 45 }
+          ];
+          const pos = dustPositions[i] || { left: 50, top: 50 };
+          const randomDuration = 4 + (i % 3);
+          const randomDelay = i * 0.5;
           
           return (
             <motion.div
               key={`dust-${i}`}
               className="absolute w-0.5 h-0.5 bg-cyan-400/40 rounded-full"
               style={{
-                left: `${randomLeft}%`,
-                top: `${randomTop}%`,
+                left: `${pos.left}%`,
+                top: `${pos.top}%`,
               }}
               animate={{
                 opacity: [0, 0.8, 0],

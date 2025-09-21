@@ -41,6 +41,15 @@ interface InteractiveMapProps {
   layers: MapLayer[]
   onLayerToggle: (layerId: string) => void
   onLayerOpacityChange: (layerId: string, opacity: number) => void
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
+  onSearch?: (query: string) => void
+  manualCoords?: { lat: string; lng: string }
+  onManualCoordsChange?: (coords: { lat: string; lng: string }) => void
+  onManualCoordsSubmit?: () => void
+  onAreaSelection?: () => void
+  isAreaSelectionMode?: boolean
+  onAreaSelected?: (area: any) => void
 }
 
 export default function InteractiveMap({ 
@@ -48,7 +57,16 @@ export default function InteractiveMap({
   onLocationSelect, 
   layers, 
   onLayerToggle, 
-  onLayerOpacityChange 
+  onLayerOpacityChange,
+  searchQuery,
+  onSearchChange,
+  onSearch,
+  manualCoords,
+  onManualCoordsChange,
+  onManualCoordsSubmit,
+  onAreaSelection,
+  isAreaSelectionMode,
+  onAreaSelected
 }: InteractiveMapProps) {
   return (
     <div className="relative w-full h-full bg-slate-900">
@@ -58,6 +76,15 @@ export default function InteractiveMap({
         layers={layers}
         onLayerToggle={onLayerToggle}
         onLayerOpacityChange={onLayerOpacityChange}
+        searchQuery={searchQuery}
+        onSearchChange={onSearchChange}
+        onSearch={onSearch}
+        manualCoords={manualCoords}
+        onManualCoordsChange={onManualCoordsChange}
+        onManualCoordsSubmit={onManualCoordsSubmit}
+        onAreaSelection={onAreaSelection}
+        isAreaSelectionMode={isAreaSelectionMode}
+        onAreaSelected={onAreaSelected}
       />
     </div>
   )

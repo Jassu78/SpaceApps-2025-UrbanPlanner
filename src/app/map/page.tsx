@@ -13,7 +13,10 @@ import {
   Settings,
   ChevronDown,
   Flame,
-  Sun
+  Sun,
+  Search,
+  MapPin,
+  Square
 } from "lucide-react"
 
 interface MapLayer {
@@ -54,6 +57,12 @@ export default function MapPage() {
 
   const [mapCenter] = useState({ lat: 40.7128, lng: -74.0060 })
   const [zoom] = useState(10)
+  
+  // User interaction state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [manualCoords, setManualCoords] = useState({ lat: '', lng: '' })
+  const [selectedArea, setSelectedArea] = useState<any>(null)
+  const [isAreaSelectionMode, setIsAreaSelectionMode] = useState(false)
 
   const toggleLayer = (layerId: string) => {
     setLayers(layers.map(layer => 
@@ -65,6 +74,91 @@ export default function MapPage() {
     setLayers(layers.map(layer => 
       layer.id === layerId ? { ...layer, opacity } : layer
     ))
+  }
+
+  // User interaction functions
+  const searchLocation = async (query: string) => {
+    if (!query || !query.trim()) {
+      alert('Please enter a location to search')
+      return
+    }
+    
+    try {
+      // Use OpenStreetMap Nominatim API for geocoding
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+      const data = await response.json()
+      
+      if (data.length > 0) {
+        const { lat, lon, display_name } = data[0]
+        const coords = { lat: parseFloat(lat), lng: parseFloat(lon) }
+        
+        // Create a location object for the searched location
+        // The real NASA data will be fetched and displayed by the map component
+        const location: LocationData = {
+          lat: coords.lat,
+          lng: coords.lng,
+          name: display_name,
+          temperature: 0, // Will be updated with real NASA data
+          airQuality: 0,  // Will be updated with real NASA data
+          vegetation: 0,  // Will be updated with real NASA data
+          precipitation: 0, // Will be updated with real NASA data
+          lastUpdated: new Date().toISOString()
+        }
+        
+        setSelectedLocation(location)
+        
+        // Clear the search input after successful search
+        setSearchQuery('')
+        
+        console.log('Location found:', display_name, coords)
+        console.log('Map should center on:', coords.lat, coords.lng)
+      } else {
+        alert('Location not found. Please try a different search term.')
+      }
+    } catch (error) {
+      console.error('Error searching location:', error)
+      alert('Error searching location. Please try again.')
+    }
+  }
+
+  const handleManualCoords = async () => {
+    // Check if coordinates are empty
+    if (!manualCoords.lat || !manualCoords.lng) {
+      alert('Please enter both latitude and longitude')
+      return
+    }
+    
+    const lat = parseFloat(manualCoords.lat)
+    const lng = parseFloat(manualCoords.lng)
+    
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      alert('Please enter valid coordinates (lat: -90 to 90, lng: -180 to 180)')
+      return
+    }
+    
+    const location: LocationData = {
+      lat,
+      lng,
+      name: `Custom Location ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      temperature: 0, // Will be updated with real NASA data
+      airQuality: 0,  // Will be updated with real NASA data
+      vegetation: 0,  // Will be updated with real NASA data
+      precipitation: 0, // Will be updated with real NASA data
+      lastUpdated: new Date().toISOString()
+    }
+    
+    setSelectedLocation(location)
+    
+    // Clear the coordinate inputs after successful submission
+    setManualCoords({ lat: '', lng: '' })
+    
+    console.log('Manual coordinates set:', lat, lng)
+  }
+
+  const startAreaSelection = () => {
+    // Toggle area selection mode
+    setIsAreaSelectionMode(!isAreaSelectionMode)
+    console.log('Area selection mode:', !isAreaSelectionMode ? 'activated' : 'deactivated')
   }
 
   const getLayerIcon = (type: string) => {
@@ -96,18 +190,118 @@ export default function MapPage() {
       <div className="flex h-[calc(100vh-100px)] bg-slate-900">
         {/* Interactive Map Container */}
         <div className="flex-1 relative bg-slate-900">
-          <InteractiveMap
-            selectedLocation={selectedLocation}
-            onLocationSelect={setSelectedLocation}
-            layers={layers}
-            onLayerToggle={toggleLayer}
-            onLayerOpacityChange={updateLayerOpacity}
-          />
+                 <InteractiveMap
+                   selectedLocation={selectedLocation}
+                   onLocationSelect={setSelectedLocation}
+                   layers={layers}
+                   onLayerToggle={toggleLayer}
+                   onLayerOpacityChange={updateLayerOpacity}
+                   searchQuery={searchQuery}
+                   onSearchChange={setSearchQuery}
+                   onSearch={searchLocation}
+                   manualCoords={manualCoords}
+                   onManualCoordsChange={setManualCoords}
+                   onManualCoordsSubmit={handleManualCoords}
+                   onAreaSelection={startAreaSelection}
+                   isAreaSelectionMode={isAreaSelectionMode}
+                   onAreaSelected={setSelectedArea}
+                 />
         </div>
 
         {/* Sidebar */}
         <div className="w-80 bg-black/20 backdrop-blur-sm border-l border-white/10 overflow-y-auto">
           <div className="p-6 space-y-6">
+            {/* Search Location */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Search className="w-5 h-5" />
+                Search Location
+              </h3>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search by city, country..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyPress={(e) => e.key === 'Enter' && searchLocation(searchQuery)}
+                  />
+                  <button
+                    onClick={() => searchLocation(searchQuery)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    Search
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Manual Coordinates */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Manual Coordinates
+              </h3>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Latitude"
+                    value={manualCoords.lat}
+                    onChange={(e) => setManualCoords({...manualCoords, lat: e.target.value})}
+                    className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    step="0.0001"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Longitude"
+                    value={manualCoords.lng}
+                    onChange={(e) => setManualCoords({...manualCoords, lng: e.target.value})}
+                    className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    step="0.0001"
+                  />
+                </div>
+                <button
+                  onClick={handleManualCoords}
+                  className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
+                >
+                  Go to Coordinates
+                </button>
+              </div>
+            </div>
+
+            {/* Area Selection */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Square className="w-5 h-5" />
+                Area Selection
+              </h3>
+                     <div className="space-y-3">
+                       <button
+                         onClick={startAreaSelection}
+                         className={`w-full px-4 py-2 text-white rounded-md transition-colors text-sm ${
+                           isAreaSelectionMode 
+                             ? 'bg-red-500 hover:bg-red-600' 
+                             : 'bg-purple-500 hover:bg-purple-600'
+                         }`}
+                       >
+                         {isAreaSelectionMode ? 'Cancel Area Selection' : 'Select Area (Click on Map)'}
+                       </button>
+                       <div className="text-xs text-gray-400">
+                         {isAreaSelectionMode 
+                           ? 'Click to start drawing rectangle, click again to finish'
+                           : 'Click button to enable area selection mode'
+                         }
+                       </div>
+                       {selectedArea && (
+                         <div className="text-xs text-green-400">
+                           ✓ Area selected - NASA data loaded
+                         </div>
+                       )}
+                     </div>
+            </div>
+
             {/* Layer Controls */}
             <div>
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">

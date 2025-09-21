@@ -10,8 +10,12 @@ import {
   Satellite,
   ZoomIn,
   ZoomOut,
-  RotateCcw
+  RotateCcw,
+  Flame,
+  Sun
 } from "lucide-react"
+import { nasaDataService, GIBSLayer, FIRMSFireData } from '@/lib/nasaDataService'
+import L from 'leaflet'
 
 interface MapLayer {
   id: string
@@ -110,13 +114,29 @@ export default function LeafletMap({
     { lat: 29.7604, lng: -95.3698, name: 'Houston', temperature: 31.4, airQuality: 73, vegetation: 0.58, precipitation: 18.9 }
   ]
 
-  // Fetch NASA data for a location
-  const fetchNASAData = async (lat: number, lng: number, dataType: string) => {
+  // Utility function to normalize coordinates
+  const normalizeCoordinates = (lat: number, lng: number) => {
+    // Normalize longitude to valid range (-180 to 180)
+    let normalizedLng = lng
+    while (normalizedLng < -180) normalizedLng += 360
+    while (normalizedLng > 180) normalizedLng -= 360
+    
+    return {
+      lat: Math.max(-90, Math.min(90, lat)), // Clamp latitude to valid range
+      lng: normalizedLng
+    }
+  }
+
+  // Fetch NASA data for a location using the real service
+  const fetchNASAData = async (lat: number, lng: number, dataType: 'temperature' | 'vegetation' | 'albedo') => {
     try {
-      const response = await fetch(`/api/nasa-modis?lat=${lat}&lng=${lng}&type=${dataType}&temporal=2024-01-01,2024-01-31`)
-      if (!response.ok) throw new Error('Failed to fetch NASA data')
-      const data = await response.json()
-      return data
+      const result = await nasaDataService.fetchMODISData(lat, lng, dataType)
+      if (result.success) {
+        return result.data
+      } else {
+        console.error(`Error fetching NASA ${dataType} data:`, result.error)
+        return null
+      }
     } catch (error) {
       console.error(`Error fetching NASA ${dataType} data:`, error)
       return null
@@ -185,6 +205,70 @@ export default function LeafletMap({
            }
          }
 
+         // Function to add real-time fire markers
+         const addFireMarkers = (fireData: FIRMSFireData[]) => {
+           const map = mapInstanceRef.current
+           if (!map || !fireData.length) return
+
+           // Clear existing fire markers
+           if ((map as any).fireMarkers) {
+             ;(map as any).fireMarkers.clearLayers()
+           } else {
+             ;(map as any).fireMarkers = L.layerGroup()
+           }
+
+           fireData.forEach(fire => {
+             // Determine marker color based on confidence and brightness
+             let markerColor = 'orange'
+             if (fire.confidence === 'high' || fire.brightness > 400) {
+               markerColor = 'red'
+             } else if (fire.confidence === 'nominal' || fire.brightness > 300) {
+               markerColor = 'darkorange'
+             }
+
+             // Create fire marker
+             const fireMarker = L.circleMarker([fire.latitude, fire.longitude], {
+               radius: Math.min(Math.max(fire.brightness / 50, 3), 12),
+               fillColor: markerColor,
+               color: 'white',
+               weight: 2,
+               opacity: 0.9,
+               fillOpacity: 0.7
+             }).bindPopup(`
+               <div class="p-2">
+                 <h3 class="font-semibold text-red-600 mb-2">🔥 Fire Detection</h3>
+                 <div class="space-y-1 text-sm">
+                   <div class="flex items-center gap-2">
+                     <span class="text-orange-500">📍</span>
+                     <span>${fire.latitude.toFixed(4)}, ${fire.longitude.toFixed(4)}</span>
+                   </div>
+                   <div class="flex items-center gap-2">
+                     <span class="text-red-500">🔥</span>
+                     <span>Brightness: ${fire.brightness}K</span>
+                   </div>
+                   <div class="flex items-center gap-2">
+                     <span class="text-blue-500">🛰️</span>
+                     <span>Satellite: ${fire.satellite}</span>
+                   </div>
+                   <div class="flex items-center gap-2">
+                     <span class="text-green-500">📅</span>
+                     <span>Date: ${fire.acq_date}</span>
+                   </div>
+                   <div class="flex items-center gap-2">
+                     <span class="text-purple-500">⚡</span>
+                     <span>Confidence: ${fire.confidence}</span>
+                   </div>
+                 </div>
+               </div>
+             `)
+
+             ;(map as any).fireMarkers.addLayer(fireMarker)
+           })
+
+           // Add fire markers to map
+           ;(map as any).fireMarkers.addTo(map)
+         }
+
 
 
          // Start area selection mode
@@ -221,28 +305,30 @@ export default function LeafletMap({
            const latNum = typeof lat === 'number' ? lat : parseFloat(lat)
            const lngNum = typeof lng === 'number' ? lng : parseFloat(lng)
            
-           // Validate coordinates - ensure they are numbers and within valid ranges
-           if (isNaN(latNum) || isNaN(lngNum) || 
-               latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
-             console.error('Invalid coordinates for area selection:', { 
+           // Validate coordinates are numbers
+           if (isNaN(latNum) || isNaN(lngNum)) {
+             console.error('Invalid coordinates for area selection - not numbers:', { 
                originalLat: lat, 
                originalLng: lng,
                convertedLat: latNum, 
                convertedLng: lngNum,
                latType: typeof lat, 
-               lngType: typeof lng,
-               isLatNaN: isNaN(latNum),
-               isLngNaN: isNaN(lngNum)
+               lngType: typeof lng
              })
              return
            }
+           
+           // Normalize coordinates
+           const normalized = normalizeCoordinates(latNum, lngNum)
+           const finalLat = normalized.lat
+           const finalLng = normalized.lng
            
            // If no area exists, start creating one
            if (!selectedArea) {
              // Create a small rectangle around the clicked point
              const bounds = L.latLngBounds(
-               [latNum - 0.01, lngNum - 0.01],
-               [latNum + 0.01, lngNum + 0.01]
+               [finalLat - 0.01, finalLng - 0.01],
+               [finalLat + 0.01, finalLng + 0.01]
              )
              
              // Create new area
@@ -256,25 +342,25 @@ export default function LeafletMap({
              setSelectedArea(rectangle)
              
              // Store the starting point
-             ;(rectangle as any).startPoint = { lat: latNum, lng: lngNum }
+             ;(rectangle as any).startPoint = { lat: finalLat, lng: finalLng }
              
-             console.log('Area selection started at:', latNum, lngNum)
+             console.log('Area selection started at:', finalLat, finalLng)
            } else {
              // Complete the area selection
              const startPoint = (selectedArea as any).startPoint
              if (startPoint) {
                // Create final rectangle bounds
                const bounds = L.latLngBounds(
-                 [Math.min(startPoint.lat, latNum), Math.min(startPoint.lng, lngNum)],
-                 [Math.max(startPoint.lat, latNum), Math.max(startPoint.lng, lngNum)]
+                 [Math.min(startPoint.lat, finalLat), Math.min(startPoint.lng, finalLng)],
+                 [Math.max(startPoint.lat, finalLat), Math.max(startPoint.lng, finalLng)]
                )
                
                // Update the rectangle
                selectedArea.setBounds(bounds)
                
                // Calculate center point for NASA data
-               const centerLat = (startPoint.lat + latNum) / 2
-               const centerLng = (startPoint.lng + lngNum) / 2
+               const centerLat = (startPoint.lat + finalLat) / 2
+               const centerLng = (startPoint.lng + finalLng) / 2
                
                // Fetch NASA data for the center of the area
                fetchAllNASAData(centerLat, centerLng)
@@ -320,16 +406,64 @@ export default function LeafletMap({
            
            setLoadingData(true)
            try {
-             const dataTypes = ['temperature', 'vegetation', 'fire', 'albedo']
-             const promises = dataTypes.map(type => fetchNASAData(lat, lng, type))
-             const results = await Promise.all(promises)
+             // Fetch MODIS data
+             const dataTypes = ['temperature', 'vegetation', 'albedo'] as const
+             const modisPromises = dataTypes.map(type => fetchNASAData(lat, lng, type))
+             const modisResults = await Promise.all(modisPromises)
+             
+             // Fetch FIRMS fire data for the area
+             const bounds = {
+               north: lat + 0.1,
+               south: lat - 0.1,
+               east: lng + 0.1,
+               west: lng - 0.1
+             }
+             const fireResult = await nasaDataService.fetchFIRMSData(bounds)
+             
+             // Debug fire result
+             console.log('FIRMS result:', {
+               success: fireResult.success,
+               dataType: typeof fireResult.data,
+               isArray: Array.isArray(fireResult.data),
+               dataLength: Array.isArray(fireResult.data) ? fireResult.data.length : 'N/A',
+               dataSample: Array.isArray(fireResult.data) && fireResult.data.length > 0 ? fireResult.data[0] : fireResult.data
+             })
              
              const dataMap: { [key: string]: NASAData } = {}
-             results.forEach((data, index) => {
+             modisResults.forEach((data, index) => {
                if (data) {
                  dataMap[dataTypes[index]] = data
                }
              })
+             
+             // Add fire data if available
+             if (fireResult.success && fireResult.data) {
+               // Ensure fireResult.data is an array
+               const fireDataArray = Array.isArray(fireResult.data) ? fireResult.data : []
+               
+               dataMap.fire = {
+                 dataType: 'fire',
+                 product: 'FIRMS',
+                 description: 'Fire Information for Resource Management System',
+                 location: { lat, lng },
+                 temporal: new Date().toISOString().split('T')[0],
+                 granules: fireDataArray.map(fire => ({
+                   id: `${fire.latitude}-${fire.longitude}-${fire.acq_date}`,
+                   title: `Fire Detection ${fire.acq_date}`,
+                   timeStart: fire.acq_date,
+                   timeEnd: fire.acq_date,
+                   cloudCover: '0',
+                   granuleSize: '0',
+                   downloadUrl: '',
+                   opendapUrl: '',
+                   browseUrl: ''
+                 })),
+                 summary: {
+                   totalGranules: fireDataArray.length,
+                   averageCloudCover: '0'
+                 }
+               }
+             }
              
              setNasaData(dataMap)
              
@@ -376,6 +510,15 @@ export default function LeafletMap({
              // Add visual indicators to the map
              if (mapInstanceRef.current && (mapInstanceRef.current as any).dataOverlays) {
                addVisualIndicators(lat, lng, dataMap)
+             }
+             
+             // Add real-time fire data markers
+             if (fireResult.success && fireResult.data && mapInstanceRef.current) {
+               // Ensure fireResult.data is an array
+               const fireDataArray = Array.isArray(fireResult.data) ? fireResult.data : []
+               if (fireDataArray.length > 0) {
+                 addFireMarkers(fireDataArray)
+               }
              }
            } catch (error) {
              console.error('Error fetching NASA data:', error)
@@ -462,13 +605,24 @@ export default function LeafletMap({
                  const nasaLayer = (mapInstanceRef.current as any).nasaLayers[layer.type];
                  const dataOverlay = (mapInstanceRef.current as any).dataOverlays?.[layer.type];
                  
+                 console.log(`Updating layer ${layer.name} (${layer.type}):`, {
+                   visible: layer.visible,
+                   opacity: layer.opacity,
+                   nasaLayerExists: !!nasaLayer,
+                   dataOverlayExists: !!dataOverlay
+                 });
+                 
                  if (nasaLayer) {
                    if (layer.visible) {
                      nasaLayer.addTo(mapInstanceRef.current!);
                      nasaLayer.setOpacity(layer.opacity);
+                     console.log(`Added ${layer.name} layer to map`);
                    } else {
                      nasaLayer.remove();
+                     console.log(`Removed ${layer.name} layer from map`);
                    }
+                 } else {
+                   console.warn(`No NASA layer found for type: ${layer.type}`);
                  }
                  
                  if (dataOverlay) {
@@ -488,11 +642,9 @@ export default function LeafletMap({
   useEffect(() => {
     if (!isClient || mapError || !mapRef.current) return
 
-    // Dynamically import Leaflet only on client side
-    const initializeMap = async () => {
+    // Initialize map
+    const initializeMap = () => {
       try {
-        const L = await import('leaflet')
-        
         // Fix for default markers in Next.js
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -506,32 +658,83 @@ export default function LeafletMap({
         const map = L.map(mapRef.current!).setView([40.7128, -74.0060], 10)
         mapInstanceRef.current = map
 
-        // Add OpenStreetMap tiles
+        // Add OpenStreetMap tiles as base layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           maxZoom: 19,
         }).addTo(map)
 
-               // Add satellite imagery layer (using a free alternative)
-               const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                 attribution: '© <a href="https://www.esri.com/">Esri</a>',
-                 maxZoom: 19,
-                 opacity: 0.8
-               })
+        // Add real NASA GIBS satellite imagery layers as TileLayers
+        const gibsLayers = nasaDataService.getAvailableGIBSLayers()
+        
+        // Get current date for GIBS layers
+        const currentDate = new Date().toISOString().split('T')[0]
+        
+        // MODIS Terra True Color - using TileLayer for proper WMTS behavior
+        const modisTerraLayer = L.tileLayer(
+          `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${currentDate}/250m/{z}/{y}/{x}.jpg`,
+          {
+            attribution: 'NASA GIBS',
+            maxZoom: 8,
+            opacity: 0.8,
+            subdomains: ['gibs']
+          }
+        )
 
-               // Add NASA Land Surface Temperature layer (placeholder for now)
-               const nasaTempLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                 attribution: '© <a href="https://www.esri.com/">Esri</a>',
-                 maxZoom: 19,
-                 opacity: 0.6
-               })
+        // MODIS Aqua True Color
+        const modisAquaLayer = L.tileLayer(
+          `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/MODIS_Aqua_CorrectedReflectance_TrueColor/default/${currentDate}/250m/{z}/{y}/{x}.jpg`,
+          {
+            attribution: 'NASA GIBS',
+            maxZoom: 8,
+            opacity: 0.8,
+            subdomains: ['gibs']
+          }
+        )
 
-               // Add NASA Vegetation Index layer (placeholder for now)
-               const nasaVegLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                 attribution: '© <a href="https://www.esri.com/">Esri</a>',
-                 maxZoom: 19,
-                 opacity: 0.6
-               })
+        // VIIRS True Color
+        const viirsLayer = L.tileLayer(
+          `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/${currentDate}/250m/{z}/{y}/{x}.jpg`,
+          {
+            attribution: 'NASA GIBS',
+            maxZoom: 8,
+            opacity: 0.8,
+            subdomains: ['gibs']
+          }
+        )
+
+        // Landsat True Color
+        const landsatLayer = L.tileLayer(
+          `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/Landsat_WELD_CorrectedReflectance_TrueColor/default/${currentDate}/250m/{z}/{y}/{x}.jpg`,
+          {
+            attribution: 'NASA GIBS',
+            maxZoom: 8,
+            opacity: 0.8,
+            subdomains: ['gibs']
+          }
+        )
+
+        // MODIS Land Surface Temperature
+        const modisLSTLayer = L.tileLayer(
+          `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/MODIS_Terra_Land_Surface_Temperature_Day/default/${currentDate}/250m/{z}/{y}/{x}.png`,
+          {
+            attribution: 'NASA GIBS',
+            maxZoom: 8,
+            opacity: 0.7,
+            subdomains: ['gibs']
+          }
+        )
+
+        // MODIS NDVI
+        const modisNDVILayer = L.tileLayer(
+          `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/MODIS_Terra_NDVI/default/${currentDate}/250m/{z}/{y}/{x}.png`,
+          {
+            attribution: 'NASA GIBS',
+            maxZoom: 8,
+            opacity: 0.7,
+            subdomains: ['gibs']
+          }
+        )
 
                // Add visual data overlays based on NASA data
                const addDataOverlays = () => {
@@ -559,26 +762,44 @@ export default function LeafletMap({
                addDataOverlays()
 
 
-               // Store layers for later use
+               // Store layers for later use - map by layer type for easy lookup
                ;(map as any).nasaLayers = {
-                 satellite: satelliteLayer,
-                 temperature: nasaTempLayer,
-                 vegetation: nasaVegLayer
+                 // Map layer types to actual NASA layers
+                 temperature: modisTerraLayer,    // MODIS Terra True Color
+                 air_quality: modisAquaLayer,     // MODIS Aqua True Color  
+                 vegetation: viirsLayer,          // VIIRS True Color
+                 precipitation: landsatLayer,     // Landsat True Color
+                 fire: modisLSTLayer,             // MODIS Land Surface Temperature
+                 albedo: modisNDVILayer           // MODIS NDVI
                }
 
                // Add layer control functionality
                const updateLayerVisibility = () => {
+                 console.log('Initial layer setup - layers:', layers.map(l => ({ name: l.name, type: l.type, visible: l.visible })));
+                 console.log('Available NASA layers:', Object.keys((map as any).nasaLayers));
+                 
                  layers.forEach(layer => {
                    const nasaLayer = (map as any).nasaLayers[layer.type];
                    const dataOverlay = (map as any).dataOverlays?.[layer.type];
+                   
+                   console.log(`Processing layer ${layer.name} (${layer.type}):`, {
+                     visible: layer.visible,
+                     opacity: layer.opacity,
+                     nasaLayerExists: !!nasaLayer,
+                     dataOverlayExists: !!dataOverlay
+                   });
                    
                    if (nasaLayer) {
                      if (layer.visible) {
                        nasaLayer.addTo(map);
                        nasaLayer.setOpacity(layer.opacity);
+                       console.log(`✅ Added ${layer.name} layer to map`);
                      } else {
                        nasaLayer.remove();
+                       console.log(`❌ Removed ${layer.name} layer from map`);
                      }
+                   } else {
+                     console.warn(`⚠️ No NASA layer found for type: ${layer.type}`);
                    }
                    
                    if (dataOverlay) {
@@ -594,6 +815,12 @@ export default function LeafletMap({
 
                // Initial layer setup
                updateLayerVisibility();
+               
+               // DEBUG: Force add MODIS Terra layer to test
+               console.log('🔍 DEBUG: Force adding MODIS Terra layer for testing...')
+               modisTerraLayer.addTo(map)
+               console.log('✅ MODIS Terra layer added to map')
+               console.log('Map layers after adding:', Object.keys((map as any)._layers))
 
         // Add sample location markers (without automatic NASA data fetching)
         sampleLocations.forEach((location) => {
@@ -660,31 +887,33 @@ export default function LeafletMap({
                  const latNum = typeof lat === 'number' ? lat : parseFloat(lat)
                  const lngNum = typeof lng === 'number' ? lng : parseFloat(lng)
                  
-                 // Validate coordinates - ensure they are numbers and within valid ranges
-                 if (isNaN(latNum) || isNaN(lngNum) || 
-                     latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
-                   console.error('Invalid coordinates:', { 
+                 // Validate coordinates are numbers
+                 if (isNaN(latNum) || isNaN(lngNum)) {
+                   console.error('Invalid coordinates - not numbers:', { 
                      originalLat: lat, 
                      originalLng: lng,
                      convertedLat: latNum, 
                      convertedLng: lngNum,
                      latType: typeof lat, 
-                     lngType: typeof lng,
-                     isLatNaN: isNaN(latNum),
-                     isLngNaN: isNaN(lngNum)
+                     lngType: typeof lng
                    })
                    return
                  }
                  
+                 // Normalize coordinates
+                 const normalized = normalizeCoordinates(latNum, lngNum)
+                 const finalLat = normalized.lat
+                 const finalLng = normalized.lng
+                 
                  // Only fetch data if not in area selection mode
                  if (!isAreaSelectionMode) {
                    // Fetch NASA data for clicked location
-                   await fetchAllNASAData(latNum, lngNum)
+                   await fetchAllNASAData(finalLat, finalLng)
                    
                    const location: LocationData = {
-                     lat: latNum,
-                     lng: lngNum,
-                     name: `Location ${latNum.toFixed(4)}, ${lngNum.toFixed(4)}`,
+                     lat: finalLat,
+                     lng: finalLng,
+                     name: `Location ${finalLat.toFixed(4)}, ${finalLng.toFixed(4)}`,
                      temperature: 0, // Will be updated with real NASA data
                      airQuality: 0,  // Will be updated with real NASA data
                      vegetation: 0,  // Will be updated with real NASA data
@@ -712,7 +941,7 @@ export default function LeafletMap({
         mapInstanceRef.current = null
       }
     }
-         }, [isClient, mapError, onLocationSelect])
+  }, [isClient, mapError, onLocationSelect])
 
   const handleZoomIn = () => {
     if (mapInstanceRef.current) {

@@ -19,10 +19,12 @@ const LeafletMap = dynamic(() => import('./LeafletMap'), {
 interface MapLayer {
   id: string
   name: string
-  type: 'temperature' | 'air_quality' | 'vegetation' | 'precipitation'
+  type: 'temperature' | 'air_quality' | 'vegetation' | 'precipitation' | 'fire' | 'albedo'
   visible: boolean
   opacity: number
   color: string
+  nasaProduct?: string
+  nasaType?: string
 }
 
 interface LocationData {
@@ -33,6 +35,10 @@ interface LocationData {
   airQuality: number
   vegetation: number
   precipitation: number
+  fire?: number
+  albedo?: number
+  cloudCover?: number
+  lastUpdated?: string
 }
 
 interface InteractiveMapProps {
@@ -49,7 +55,7 @@ interface InteractiveMapProps {
   onManualCoordsSubmit?: () => void
   onAreaSelection?: () => void
   isAreaSelectionMode?: boolean
-  onAreaSelected?: (area: any) => void
+  onAreaSelected?: (area: unknown) => void
 }
 
 export default function InteractiveMap({ 

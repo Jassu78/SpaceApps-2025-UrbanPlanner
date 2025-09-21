@@ -16,7 +16,8 @@ import {
   Sun,
   Search,
   MapPin,
-  Square
+  Square,
+  Satellite
 } from "lucide-react"
 
 interface MapLayer {
@@ -47,12 +48,12 @@ interface LocationData {
 export default function MapPage() {
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null)
   const [layers, setLayers] = useState<MapLayer[]>([
-    { id: 'temp', name: 'Temperature', type: 'temperature', visible: true, opacity: 0.8, color: 'orange', nasaProduct: 'MOD11A1', nasaType: 'temperature' },
-    { id: 'air', name: 'Air Quality', type: 'air_quality', visible: true, opacity: 0.7, color: 'blue' },
-    { id: 'veg', name: 'Vegetation', type: 'vegetation', visible: true, opacity: 0.6, color: 'green', nasaProduct: 'MCD43A4', nasaType: 'vegetation' },
-    { id: 'precip', name: 'Precipitation', type: 'precipitation', visible: false, opacity: 0.5, color: 'cyan' },
-    { id: 'fire', name: 'Fire Detection', type: 'fire', visible: false, opacity: 0.7, color: 'red', nasaProduct: 'MOD14', nasaType: 'fire' },
-    { id: 'albedo', name: 'Surface Albedo', type: 'albedo', visible: false, opacity: 0.6, color: 'yellow', nasaProduct: 'MCD43A3', nasaType: 'albedo' }
+    { id: 'modis_terra', name: 'MODIS Terra', type: 'temperature', visible: true, opacity: 0.8, color: 'orange', nasaProduct: 'MODIS_Terra_CorrectedReflectance_TrueColor', nasaType: 'satellite' },
+    { id: 'modis_aqua', name: 'MODIS Aqua', type: 'air_quality', visible: false, opacity: 0.7, color: 'blue', nasaProduct: 'MODIS_Aqua_CorrectedReflectance_TrueColor', nasaType: 'satellite' },
+    { id: 'viirs', name: 'VIIRS', type: 'vegetation', visible: false, opacity: 0.6, color: 'green', nasaProduct: 'VIIRS_SNPP_CorrectedReflectance_TrueColor', nasaType: 'satellite' },
+    { id: 'landsat', name: 'Landsat', type: 'precipitation', visible: false, opacity: 0.5, color: 'cyan', nasaProduct: 'Landsat_WELD_CorrectedReflectance_TrueColor', nasaType: 'satellite' },
+    { id: 'lst', name: 'Land Surface Temperature', type: 'fire', visible: false, opacity: 0.7, color: 'red', nasaProduct: 'MODIS_Terra_Land_Surface_Temperature_Day', nasaType: 'temperature' },
+    { id: 'ndvi', name: 'Vegetation Index (NDVI)', type: 'albedo', visible: false, opacity: 0.6, color: 'yellow', nasaProduct: 'MODIS_Terra_NDVI', nasaType: 'vegetation' }
   ])
 
   const [mapCenter] = useState({ lat: 40.7128, lng: -74.0060 })
@@ -61,7 +62,7 @@ export default function MapPage() {
   // User interaction state
   const [searchQuery, setSearchQuery] = useState('')
   const [manualCoords, setManualCoords] = useState({ lat: '', lng: '' })
-  const [selectedArea, setSelectedArea] = useState<any>(null)
+  const [selectedArea, setSelectedArea] = useState<unknown>(null)
   const [isAreaSelectionMode, setIsAreaSelectionMode] = useState(false)
 
   const toggleLayer = (layerId: string) => {
@@ -163,12 +164,12 @@ export default function MapPage() {
 
   const getLayerIcon = (type: string) => {
     switch (type) {
-      case 'temperature': return Thermometer
-      case 'air_quality': return Wind
-      case 'vegetation': return Leaf
-      case 'precipitation': return Droplets
-      case 'fire': return Flame
-      case 'albedo': return Sun
+      case 'temperature': return Satellite
+      case 'air_quality': return Satellite
+      case 'vegetation': return Satellite
+      case 'precipitation': return Satellite
+      case 'fire': return Thermometer
+      case 'albedo': return Leaf
       default: return Layers
     }
   }

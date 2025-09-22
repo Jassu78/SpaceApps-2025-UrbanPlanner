@@ -13,6 +13,20 @@ export async function GET(req: NextRequest) {
   const tilecol = searchParams.get('tilecol');
   const format = searchParams.get('format');
 
+  // If no params provided, return WMTS capabilities as a convenience endpoint
+  if (!service && !request) {
+    const capsUrl = 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?SERVICE=WMTS&REQUEST=GetCapabilities';
+    try {
+      const res = await fetch(capsUrl);
+      const xml = await res.text();
+      return new NextResponse(xml, {
+        headers: { 'Content-Type': 'application/xml; charset=utf-8' }
+      });
+    } catch (e) {
+      return NextResponse.json({ error: 'Failed to fetch WMTS capabilities' }, { status: 500 });
+    }
+  }
+
   if (!service || !request || !version || !layer || !style || !tilematrixset || !tilematrix || !tilerow || !tilecol || !format) {
     return NextResponse.json({ error: 'Missing required WMTS parameters' }, { status: 400 });
   }

@@ -282,8 +282,8 @@ export class APIClient {
     return response.json()
   }
 
-  async fetchPopulation(country: string = 'USA') {
-    const response = await fetch(`${this.baseUrl}/api/population?country=${country}`)
+  async fetchPopulation(lat: number = 40.7128, lng: number = -74.0060) {
+    const response = await fetch(`${this.baseUrl}/api/population?lat=${lat}&lng=${lng}`)
     return response.json()
   }
 

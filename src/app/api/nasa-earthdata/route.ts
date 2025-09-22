@@ -8,7 +8,14 @@ export async function GET(request: NextRequest) {
   const lat = searchParams.get('lat');
   const lng = searchParams.get('lng');
   const product = searchParams.get('product') || 'MOD11A1'; // Default to temperature
-  const temporal = searchParams.get('temporal') || '2024-01-01,2024-01-31';
+  // Default to last 7 days if not provided
+  const temporal = searchParams.get('temporal') || (() => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - 7)
+    const fmt = (d: Date) => d.toISOString().split('T')[0]
+    return `${fmt(start)},${fmt(end)}`
+  })();
 
   if (!lat || !lng) {
     return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
@@ -39,8 +46,50 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid product specified' }, { status: 400 });
     }
 
-    // Search for granules
-    const searchUrl = `${NASA_CMR_API}/search/granules.json?bounding_box=${bbox}&temporal=${temporal}&collection_concept_id=${collectionId}`;
+    // First try collections search, then granules
+    const collectionsUrl = `${NASA_CMR_API}/search/collections.json?short_name=${product}&page_size=1`;
+    
+    const collectionsResponse = await fetch(collectionsUrl, {
+      headers: {
+        'Authorization': `Bearer ${NASA_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!collectionsResponse.ok) {
+      // Fallback to a simple collections search without auth
+      const fallbackUrl = `${NASA_CMR_API}/search/collections.json?short_name=${product}&page_size=1`;
+      const fallbackResponse = await fetch(fallbackUrl);
+      
+      if (!fallbackResponse.ok) {
+        throw new Error(`NASA API error: ${fallbackResponse.status} ${fallbackResponse.statusText}`);
+      }
+      
+      const fallbackData = await fallbackResponse.json();
+      return NextResponse.json({
+        product,
+        location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        temporal,
+        collections: fallbackData.feed?.entry || [],
+        message: 'Collections found (fallback mode)'
+      });
+    }
+
+    const collectionsData = await collectionsResponse.json();
+    const actualCollectionId = collectionsData.feed?.entry?.[0]?.id;
+    
+    if (!actualCollectionId) {
+      return NextResponse.json({
+        product,
+        location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        temporal,
+        collections: collectionsData.feed?.entry || [],
+        message: 'No collections found for this product'
+      });
+    }
+
+    // Search for granules using the actual collection ID
+    const searchUrl = `${NASA_CMR_API}/search/granules.json?bounding_box=${bbox}&temporal=${encodeURIComponent(temporal)}&collection_concept_id=${actualCollectionId}&page_size=5`;
     
     const response = await fetch(searchUrl, {
       headers: {

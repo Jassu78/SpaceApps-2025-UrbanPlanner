@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Button } from "@/components/ui/button"
-import { Sun, Moon, ChevronDown, BarChart3, MapPin, MessageSquare, Activity } from "lucide-react"
+import { Sun, Moon, ChevronDown, BarChart3, MapPin, MessageSquare, Activity, TestTube } from "lucide-react"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import Link from "next/link"
@@ -34,6 +34,7 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
     { name: "Map", href: "/map", icon: MapPin },
     { name: "Analytics", href: "/analytics", icon: Activity },
     { name: "AI Chat", href: "/chat", icon: MessageSquare },
+    { name: "API Test", href: "/api-test", icon: TestTube },
   ]
 
   const handleNavClick = (href: string) => {

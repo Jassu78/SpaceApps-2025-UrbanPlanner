@@ -46,6 +46,34 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const lat = parseFloat(searchParams.get('lat') || '')
+    const lng = parseFloat(searchParams.get('lng') || '')
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Latitude and longitude are required as query params'
+      } as PopulationResponse, { status: 400 })
+    }
+
+    const populationData = generatePopulationData(lat, lng)
+
+    return NextResponse.json({
+      success: true,
+      data: populationData
+    } as PopulationResponse)
+  } catch (error) {
+    console.error('Population API GET error:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch population data'
+    } as PopulationResponse, { status: 500 })
+  }
+}
+
 function generatePopulationData(lat: number, lng: number) {
   // Generate realistic population data based on coordinates
   // This simulates SEDAC population data

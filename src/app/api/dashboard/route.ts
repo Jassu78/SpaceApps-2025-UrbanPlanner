@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const location = searchParams.get('location') || 'here'
     const coords = searchParams.get('coords') || '40.7128,-74.0060'
+    const [latStr, lngStr] = coords.split(',')
     const country = searchParams.get('country') || 'USA'
     const bbox = searchParams.get('bbox') || '-74.1,40.7,-73.9,40.8'
     
@@ -18,14 +19,15 @@ export async function GET(request: NextRequest) {
     console.log('Dashboard API - Vercel URL:', process.env.VERCEL_URL)
     
     // Try to fetch data with fallback to relative URLs if absolute URLs fail
-    let airQualityRes, weatherRes, populationRes, landsatRes
+    let airQualityRes, weatherRes, openMeteoRes, populationRes, landsatRes
     
     try {
       // First try with absolute URLs
-      [airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
+      [airQualityRes, weatherRes, openMeteoRes, populationRes, landsatRes] = await Promise.allSettled([
         fetch(`${baseUrl}/api/waqi?location=${location}&coords=${coords}`),
         fetch(`${baseUrl}/api/weather?coords=${coords}`),
-        fetch(`${baseUrl}/api/population?country=${country}`),
+        fetch(`${baseUrl}/api/open-meteo?lat=${latStr}&lng=${lngStr}`),
+        fetch(`${baseUrl}/api/population?lat=${latStr}&lng=${lngStr}`),
         fetch(`${baseUrl}/api/landsat?bbox=${bbox}`)
       ])
     } catch (error) {
@@ -34,19 +36,22 @@ export async function GET(request: NextRequest) {
       const fallbackResults = await Promise.allSettled([
         fetch(`/api/waqi?location=${location}&coords=${coords}`),
         fetch(`/api/weather?coords=${coords}`),
-        fetch(`/api/population?country=${country}`),
+        fetch(`/api/open-meteo?lat=${latStr}&lng=${lngStr}`),
+        fetch(`/api/population?lat=${latStr}&lng=${lngStr}`),
         fetch(`/api/landsat?bbox=${bbox}`)
       ])
       airQualityRes = fallbackResults[0]
       weatherRes = fallbackResults[1]
-      populationRes = fallbackResults[2]
-      landsatRes = fallbackResults[3]
+      openMeteoRes = fallbackResults[2]
+      populationRes = fallbackResults[3]
+      landsatRes = fallbackResults[4]
     }
     
     console.log('Dashboard API - Fetch results:', {
       airQuality: airQualityRes.status,
       weather: weatherRes.status,
       population: populationRes.status,
+      openMeteo: openMeteoRes.status,
       landsat: landsatRes.status
     })
 
@@ -54,6 +59,7 @@ export async function GET(request: NextRequest) {
     let airQuality = null
     let weather = null
     let population = null
+    let openMeteo = null
     let landsat = null
 
     try {
@@ -66,6 +72,12 @@ export async function GET(request: NextRequest) {
       weather = weatherRes.status === 'fulfilled' ? await weatherRes.value.json() as Record<string, unknown> : null
     } catch (error) {
       console.error('Weather API error:', error)
+    }
+
+    try {
+      openMeteo = openMeteoRes.status === 'fulfilled' ? await openMeteoRes.value.json() as Record<string, unknown> : null
+    } catch (error) {
+      console.error('Open-Meteo API error:', error)
     }
 
     try {
@@ -166,6 +178,12 @@ export async function GET(request: NextRequest) {
           (weather.current as Record<string, unknown>)?.humidity as number || weather.humidity as number
         ),
         lastUpdated: (weather.metadata as Record<string, unknown>)?.generatedAt as string || weather.timestamp as string
+      } : null,
+      weatherGround: openMeteo ? {
+        source: 'Open-Meteo (Weather API Ground)',
+        current: (openMeteo as any).current,
+        daily: (openMeteo as any).daily,
+        urls: { weather: (openMeteo as any).weatherUrl, air: (openMeteo as any).airUrl }
       } : null,
       population: population ? {
         density: (population as Record<string, unknown>)?.density as number || 0,

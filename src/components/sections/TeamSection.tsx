@@ -65,6 +65,17 @@ export const TeamSection = ({ isDeepSpace = false }: TeamSectionProps) => {
         linkedin: "https://www.linkedin.com/in/rama-chintha21/",
         email: "ramach2103@gmail.com"
       }
+    },
+    {
+      name: "Matcha Vamsi Krishna",
+      role: "Developer",
+      skills: ["Development", "Programming", "Technology"],
+      avatar: "👨‍💻",
+      social: {
+        github: "https://github.com/vamsi-4d",
+        linkedin: "https://www.linkedin.com/in/matcha-vamsi-krishna",
+        email: "mvkrishna142@gmail.com"
+      }
     }
   ]
 

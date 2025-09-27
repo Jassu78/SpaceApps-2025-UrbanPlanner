@@ -237,14 +237,12 @@ export class APIClient {
   private baseUrl: string
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      // Client-side: use relative URLs
-      this.baseUrl = ''
-    } else {
-      // Server-side: use full URL
-      this.baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-    }
+    // Always use relative URLs for better compatibility with Vercel
+    this.baseUrl = ''
+    
+    console.log('APIClient - Using relative URLs for all API calls')
+    console.log('APIClient - VERCEL_URL:', process.env.VERCEL_URL)
+    console.log('APIClient - NEXT_PUBLIC_BASE_URL:', process.env.NEXT_PUBLIC_BASE_URL)
   }
 
   async fetchDashboardData(location: string = 'here', coords: string = '40.7128,-74.0060', country: string = 'USA'): Promise<ProcessedDashboardData> {

@@ -18,35 +18,19 @@ export async function GET(request: NextRequest) {
     console.log('Dashboard API - Coords:', coords)
     console.log('Dashboard API - Vercel URL:', process.env.VERCEL_URL)
     
-    // Try to fetch data with fallback to relative URLs if absolute URLs fail
+    // Use relative URLs for internal API calls (works better on Vercel)
     // Open-Meteo is now primary for weather + air quality, NOAA as fallback
     let airQualityRes, weatherRes, openMeteoRes, populationRes, landsatRes
     
-    try {
-      // First try with absolute URLs - Open-Meteo first for global coverage
-      [openMeteoRes, airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
-        fetch(`${baseUrl}/api/open-meteo?lat=${latStr}&lng=${lngStr}`), // Primary: Open-Meteo (global + air quality)
-        fetch(`${baseUrl}/api/waqi?location=${location}&coords=${coords}`), // Fallback air quality
-        fetch(`${baseUrl}/api/weather?coords=${coords}`), // Fallback weather (NOAA - US only)
-        fetch(`${baseUrl}/api/population?lat=${latStr}&lng=${lngStr}`),
-        fetch(`${baseUrl}/api/landsat?bbox=${bbox}`)
-      ])
-    } catch (error) {
-      console.log('Absolute URL fetch failed, trying relative URLs:', error)
-      // Fallback to relative URLs
-      const fallbackResults = await Promise.allSettled([
-        fetch(`/api/open-meteo?lat=${latStr}&lng=${lngStr}`), // Primary: Open-Meteo
-        fetch(`/api/waqi?location=${location}&coords=${coords}`), // Fallback air quality
-        fetch(`/api/weather?coords=${coords}`), // Fallback weather
-        fetch(`/api/population?lat=${latStr}&lng=${lngStr}`),
-        fetch(`/api/landsat?bbox=${bbox}`)
-      ])
-      openMeteoRes = fallbackResults[0]
-      airQualityRes = fallbackResults[1]
-      weatherRes = fallbackResults[2]
-      populationRes = fallbackResults[3]
-      landsatRes = fallbackResults[4]
-    }
+    console.log('Dashboard API - Using relative URLs for internal API calls')
+    
+    [openMeteoRes, airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
+      fetch(`/api/open-meteo?lat=${latStr}&lng=${lngStr}`), // Primary: Open-Meteo (global + air quality)
+      fetch(`/api/waqi?location=${location}&coords=${coords}`), // Fallback air quality
+      fetch(`/api/weather?coords=${coords}`), // Fallback weather (NOAA - US only)
+      fetch(`/api/population?lat=${latStr}&lng=${lngStr}`),
+      fetch(`/api/landsat?bbox=${bbox}`)
+    ])
     
     console.log('Dashboard API - Fetch results:', {
       openMeteo: openMeteoRes.status, // Primary weather + air quality

@@ -19,17 +19,68 @@ export default function OpenStreetMapView({
   const mapInstanceRef = useRef<L.Map | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [mapError, setMapError] = useState(false)
+  const retryCountRef = useRef(0)
+  const maxRetries = 10
 
   useEffect(() => {
     setIsClient(true)
   }, [])
 
   useEffect(() => {
-    if (!isClient || hasError || mapError || !mapRef.current) return
+    if (!isClient || hasError || mapError) return
+
+    // Reset retry count when effect runs
+    retryCountRef.current = 0
 
     // Dynamically import Leaflet only on client side
     const initializeMap = async () => {
       try {
+        // Wait for the next tick to ensure DOM is ready
+        await new Promise(resolve => setTimeout(resolve, 50))
+        
+        // Double-check that the map container exists
+        if (!mapRef.current) {
+          if (retryCountRef.current < maxRetries) {
+            retryCountRef.current++
+            console.warn(`Map container not found, retrying ${retryCountRef.current}/${maxRetries} in 300ms...`)
+            setTimeout(initializeMap, 300)
+            return
+          } else {
+            console.error('Map container not found after maximum retries')
+            setMapError(true)
+            return
+          }
+        }
+
+        // Additional check to ensure the container is actually in the DOM
+        if (!mapRef.current.offsetParent && !mapRef.current.offsetWidth && !mapRef.current.offsetHeight) {
+          if (retryCountRef.current < maxRetries) {
+            retryCountRef.current++
+            console.warn(`Map container not visible, retrying ${retryCountRef.current}/${maxRetries} in 300ms...`)
+            setTimeout(initializeMap, 300)
+            return
+          } else {
+            console.error('Map container not visible after maximum retries')
+            setMapError(true)
+            return
+          }
+        }
+
+        // Final check - ensure the container has dimensions
+        const rect = mapRef.current.getBoundingClientRect()
+        if (rect.width === 0 || rect.height === 0) {
+          if (retryCountRef.current < maxRetries) {
+            retryCountRef.current++
+            console.warn(`Map container has no dimensions, retrying ${retryCountRef.current}/${maxRetries} in 300ms...`)
+            setTimeout(initializeMap, 300)
+            return
+          } else {
+            console.error('Map container has no dimensions after maximum retries')
+            setMapError(true)
+            return
+          }
+        }
+
         const L = await import('leaflet')
         
         // Fix for default markers in Next.js
@@ -42,8 +93,11 @@ export default function OpenStreetMapView({
         })
 
         // Create map using the container
-        const map = L.map(mapRef.current!).setView(coordinates, zoom)
+        const map = L.map(mapRef.current).setView(coordinates, zoom)
         mapInstanceRef.current = map
+        
+        // Reset retry count on successful initialization
+        retryCountRef.current = 0
 
         // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -85,10 +139,12 @@ export default function OpenStreetMapView({
       }
     }
 
-    initializeMap()
+    // Add a delay to ensure DOM is fully rendered
+    const timeoutId = setTimeout(initializeMap, 200)
 
     // Cleanup
     return () => {
+      clearTimeout(timeoutId)
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove()
         mapInstanceRef.current = null
@@ -121,7 +177,11 @@ export default function OpenStreetMapView({
 
   return (
     <div className={className}>
-      <div ref={mapRef} className="w-full h-full rounded-lg" />
+      <div 
+        ref={mapRef} 
+        className="w-full h-full rounded-lg" 
+        style={{ minHeight: '200px' }}
+      />
     </div>
   )
 }

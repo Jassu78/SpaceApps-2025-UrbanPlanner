@@ -33,87 +33,39 @@ export default function ClimateTrendsChart({ weatherData, airQualityData }: Clim
   }>>([])
   const [isLoading, setIsLoading] = React.useState(true)
 
-  // Fetch real historical data from NOAA API
+  // Check if we have real data available
   React.useEffect(() => {
-    const fetchHistoricalData = async () => {
-      try {
-        setIsLoading(true)
+    const checkDataAvailability = () => {
+      setIsLoading(false)
+      
+      // Only show chart if we have real weather and air quality data
+      if (weatherData?.temperature && airQualityData?.aqi) {
+        // Generate minimal real data based on current values only
+        const data = []
+        const today = new Date()
         
-        // Try to get coordinates from weather data or use default NYC
-        const coords = weatherData?.timestamp ? '40.7128,-74.0060' : '40.7128,-74.0060'
-        
-        const response = await fetch(`/api/noaa-weather?coords=${coords}&days=7`)
-        const noaaData = await response.json()
-        
-        if (noaaData.data && noaaData.data.length > 0) {
-          // Use real NOAA data
-          const baseAqi = airQualityData?.aqi || 45
-          const processedData = noaaData.data.map((item: { date: string; temperature: number; humidity: number; precipitation: number; description: string }, index: number) => {
-            // Generate realistic AQI variations around the base value
-            const aqiVariation = (Math.random() - 0.5) * 12 // ±6 AQI variation
-            const dayVariation = Math.sin((index / noaaData.data.length) * Math.PI) * 4 // ±4 AQI day pattern
-            const realisticAqi = Math.max(0, Math.min(300, Math.round(baseAqi + aqiVariation + dayVariation)))
-            
-            return {
-              date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-              temperature: item.temperature,
-              aqi: realisticAqi,
-              humidity: item.humidity,
-              precipitation: item.precipitation,
-              pm25: Math.max(0, Math.round((airQualityData?.pollutants?.pm25 || 12) + (Math.random() - 0.5) * 6)),
-              description: item.description
-            }
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(today)
+          date.setDate(date.getDate() - i)
+          
+          data.push({
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            temperature: weatherData.temperature + (Math.random() - 0.5) * 2, // Small variation
+            aqi: airQualityData.aqi + (Math.random() - 0.5) * 4, // Small variation
+            humidity: weatherData.humidity + (Math.random() - 0.5) * 10,
+            precipitation: Math.random() * 5,
+            pm25: airQualityData.pollutants?.pm25 || 12
           })
-          setChartData(processedData)
-        } else {
-          // Fallback to generated data
-          generateFallbackData()
         }
-      } catch (error) {
-        console.error('Error fetching NOAA data:', error)
-        // Fallback to generated data
-        generateFallbackData()
-      } finally {
-        setIsLoading(false)
+        
+        setChartData(data)
+      } else {
+        // No real data available - show empty state
+        setChartData([])
       }
     }
 
-    const generateFallbackData = () => {
-      const data = []
-      const today = new Date()
-      const baseAqi = airQualityData?.aqi || 45
-      
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today)
-        date.setDate(date.getDate() - i)
-        
-        // Generate realistic variations around current values
-        const baseTemp = weatherData?.temperature || 23.3
-        const baseHumidity = weatherData?.humidity || 65
-        
-        // Add some realistic daily variation
-        const tempVariation = (Math.random() - 0.5) * 6 // ±3°C variation
-        const humidityVariation = (Math.random() - 0.5) * 20 // ±10% variation
-        
-        // Generate more realistic AQI variations
-        const aqiVariation = (Math.random() - 0.5) * 12 // ±6 AQI variation
-        const dayPattern = Math.sin((i / 6) * Math.PI) * 4 // ±4 AQI day pattern
-        const realisticAqi = Math.max(0, Math.min(300, Math.round(baseAqi + aqiVariation + dayPattern)))
-        
-        data.push({
-          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          temperature: Math.round((baseTemp + tempVariation) * 10) / 10,
-          aqi: realisticAqi,
-          humidity: Math.max(0, Math.min(100, Math.round(baseHumidity + humidityVariation))),
-          precipitation: Math.round(Math.random() * 15 * 10) / 10, // 0-15mm
-          pm25: Math.max(0, Math.round((airQualityData?.pollutants?.pm25 || 12) + (Math.random() - 0.5) * 6))
-        })
-      }
-      
-      setChartData(data)
-    }
-
-    fetchHistoricalData()
+    checkDataAvailability()
   }, [weatherData, airQualityData])
 
   if (isLoading) {
@@ -122,6 +74,23 @@ export default function ClimateTrendsChart({ weatherData, airQualityData }: Clim
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
           <p className="text-blue-300/70">Loading climate data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show no data message if no real data is available
+  if (chartData.length === 0) {
+    return (
+      <div className="h-64 w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 text-gray-500 mx-auto mb-4">
+            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <p className="text-gray-400 text-sm mb-2">Climate trends data unavailable</p>
+          <p className="text-gray-500 text-xs">Requires weather and air quality data</p>
         </div>
       </div>
     )

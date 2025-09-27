@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { X, MapPin, Thermometer, Wind, Leaf, Users, Zap } from 'lucide-react'
+import SmartCitySearch from './SmartCitySearch'
 
 interface OnboardingModalProps {
   isOpen: boolean
@@ -221,51 +222,24 @@ export const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModal
                 animate={{ opacity: 1, x: 0 }}
                 className="space-y-6"
               >
-                <div className="text-center mb-8">
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    Where do you want to analyze?
-                  </h3>
-                  <p className="text-gray-300">
-                    Enter a city, region, or specific location
-                  </p>
-                </div>
+                <SmartCitySearch
+                  onCitySelect={(city) => {
+                    onComplete({
+                      focusArea: selectedFocus,
+                      location: `${city.name}, ${city.region}, ${city.country}`,
+                      coordinates: { lat: city.latitude, lng: city.longitude }
+                    })
+                  }}
+                  onSkip={handleSkip}
+                />
 
-                <div className="max-w-lg mx-auto space-y-6">
-                  <div className="flex gap-2">
-                    <MapPin className="w-5 h-5 text-blue-400 mt-2" />
-                    <input
-                      type="text"
-                      placeholder="e.g., New York, NY or San Francisco Bay Area"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="flex-1 px-6 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                      onKeyPress={(e) => e.key === 'Enter' && handleLocationSearch()}
-                    />
-                  </div>
-                  
-                  <Button
-                    onClick={handleLocationSearch}
-                    disabled={!location.trim() || isSearching}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50"
-                  >
-                    {isSearching ? 'Searching...' : 'Find Location'}
-                  </Button>
-                </div>
-
-                <div className="flex justify-center gap-4 pt-6">
+                <div className="flex justify-center pt-6">
                   <Button
                     onClick={() => setStep(1)}
                     variant="outline"
                     className="border-white/20 text-white hover:bg-white/10 px-6 py-2 rounded-lg"
                   >
                     Back
-                  </Button>
-                  <Button
-                    onClick={handleSkip}
-                    variant="outline"
-                    className="border-white/20 text-white hover:bg-white/10 px-6 py-2 rounded-lg"
-                  >
-                    Use Default Location
                   </Button>
                 </div>
               </motion.div>

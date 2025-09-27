@@ -97,72 +97,14 @@ export async function GET(request: NextRequest) {
       console.error('Landsat API error:', error)
     }
 
-    // Only add fallback data if APIs actually failed (not just null)
-    // Open-Meteo provides both weather and air quality, so we only need fallbacks if it fails
-    if (!openMeteo && openMeteoRes.status === 'rejected') {
-      console.log('Open-Meteo API failed, using fallback data for weather and air quality')
-      
-      // Fallback weather data
-      weather = {
-        temperature: 23.5,
-        humidity: 65,
-        precipitation: 5.2,
-        windSpeed: 12.3,
-        pressure: 1013.2,
-        description: 'Partly Cloudy',
-        timestamp: new Date().toISOString(),
-        source: 'Fallback Data (Open-Meteo Unavailable)'
-      }
-      
-      // Fallback air quality data
-      airQuality = {
-        aqi: 45,
-        status: 'Good',
-        healthImpact: 'Air quality is acceptable for most people',
-        pollutants: {
-          pm25: 12.5,
-          pm10: 18.3,
-          no2: 25.7,
-          o3: 45.2,
-          so2: 8.9,
-          co: 1.2
-        },
-        city: 'Sample City',
-        timestamp: new Date().toISOString(),
-        source: 'Fallback Data (Open-Meteo Unavailable)'
-      }
-    } else if (!airQuality && airQualityRes.status === 'rejected') {
-      console.log('WAQI API failed, but Open-Meteo air quality available')
-    }
-
-    if (!weather && weatherRes.status === 'rejected' && !openMeteo) {
-      console.log('NOAA Weather API failed, but Open-Meteo weather available')
-    }
-
-    if (!population && populationRes.status === 'rejected') {
-      console.log('Population API failed, using fallback data')
-      population = {
-        population: 8500000,
-        density: 2850,
-        growthRate: 0.8,
-        year: 2023,
-        country: country,
-        timestamp: new Date().toISOString(),
-        source: 'Fallback Data (API Unavailable)'
-      }
-    }
-
-    if (!landsat && landsatRes.status === 'rejected') {
-      console.log('Landsat API failed, using fallback data')
-      landsat = {
-        features: [],
-        hasError: true,
-        ndvi: 0.65,
-        health: 'Moderate',
-        timestamp: new Date().toISOString(),
-        source: 'Fallback Data (API Unavailable)'
-      }
-    }
+    // No fallback data - show honest data availability status
+    console.log('Data availability status:', {
+      openMeteo: openMeteo ? 'Available' : 'Unavailable',
+      airQuality: airQuality ? 'Available' : 'Unavailable', 
+      weather: weather ? 'Available' : 'Unavailable',
+      population: population ? 'Available' : 'Unavailable',
+      landsat: landsat ? 'Available' : 'Unavailable'
+    })
 
     // Calculate derived metrics
     const processedData = {
@@ -195,7 +137,15 @@ export async function GET(request: NextRequest) {
         healthImpact: getHealthImpact(airQuality.aqi as number),
         lastUpdated: airQuality.timestamp as string,
         source: 'WAQI (Fallback)'
-      } : null,
+      } : {
+        // No data available
+        aqi: null,
+        status: 'No Data Available',
+        pollutants: null,
+        healthImpact: 'Air quality data is currently unavailable',
+        lastUpdated: null,
+        source: 'Unavailable'
+      },
       weather: openMeteo ? {
         // Use Open-Meteo weather data (primary source)
         temperature: (openMeteo.current as Record<string, unknown>)?.temperatureC as number || 0,
@@ -223,7 +173,18 @@ export async function GET(request: NextRequest) {
         ),
         lastUpdated: (weather.metadata as Record<string, unknown>)?.generatedAt as string || weather.timestamp as string,
         source: 'NOAA (Fallback)'
-      } : null,
+      } : {
+        // No data available
+        temperature: null,
+        humidity: null,
+        windSpeed: null,
+        precipitation: null,
+        pressure: null,
+        forecast: 'Weather data is currently unavailable',
+        heatIndex: null,
+        lastUpdated: null,
+        source: 'Unavailable'
+      },
       weatherGround: openMeteo ? {
         source: 'Open-Meteo (Weather API Ground)',
         current: (openMeteo as any).current,
@@ -232,28 +193,50 @@ export async function GET(request: NextRequest) {
       } : null,
       population: population ? {
         density: (population as Record<string, unknown>)?.density as number || 0,
-        growthRate: population.growthRate as number,
-        yearRange: (population.metadata as Record<string, unknown>)?.yearRange as { start: number; end: number },
-        dataSource: (population.data as Record<string, unknown>)?.title as string,
-        lastUpdated: (population.metadata as Record<string, unknown>)?.lastUpdated as string
-      } : null,
-      satellite: DataProcessor.processSatellite(landsat),
+        growthRate: null, // GeoDB doesn't provide growth rate
+        yearRange: null, // GeoDB doesn't provide year range
+        dataSource: 'GeoDB Cities API (Real Population Data)',
+        lastUpdated: new Date().toISOString(),
+        city: (population as Record<string, unknown>)?.city as string || 'Unknown',
+        country: (population as Record<string, unknown>)?.country as string || 'Unknown',
+        region: (population as Record<string, unknown>)?.region as string || 'Unknown',
+        elevation: (population as Record<string, unknown>)?.elevation as number || null
+      } : {
+        density: null,
+        growthRate: null,
+        yearRange: null,
+        dataSource: 'Population data is currently unavailable',
+        lastUpdated: null,
+        city: null,
+        country: null,
+        region: null,
+        elevation: null
+      },
+      satellite: landsat ? DataProcessor.processSatellite(landsat) : {
+        latestImage: null,
+        cloudCover: null,
+        platform: 'No Data Available',
+        availableBands: [],
+        hasError: true,
+        ndvi: null,
+        health: 'Data unavailable'
+      },
       metrics: {
-        // Calculate urban planning KPIs
-        urbanHeatIsland: calculateUrbanHeatIsland(
-          weather ? (weather.current as Record<string, unknown>)?.temperature as number : 0, 
+        // Calculate urban planning KPIs - only when data is available
+        urbanHeatIsland: (weather && openMeteo) ? calculateUrbanHeatIsland(
+          (weather.current as Record<string, unknown>)?.temperature as number || 0, 
           landsat ? ((landsat.features as unknown[])?.[0] as Record<string, unknown>) : null
-        ),
-        vegetationHealth: calculateVegetationHealth(
-          landsat ? ((landsat.features as unknown[])?.[0] as Record<string, unknown>) : null
-        ),
-        airQualityScore: calculateAirQualityScore(airQuality ? (airQuality.aqi as number) : 0),
-        populationDensity: population ? (population.latestYear as number) : 0,
-        environmentalHealth: calculateEnvironmentalHealth(
-          airQuality ? (airQuality.aqi as number) : 0, 
-          weather ? (weather.current as Record<string, unknown>)?.temperature as number : 0, 
-          population ? (population.latestYear as number) : 0
-        )
+        ) : null,
+        vegetationHealth: landsat ? calculateVegetationHealth(
+          ((landsat.features as unknown[])?.[0] as Record<string, unknown>) || null
+        ) : null,
+        airQualityScore: (airQuality && openMeteo) ? calculateAirQualityScore((airQuality.aqi as number) || 0) : null,
+        populationDensity: population ? (population.latestYear as number) : null,
+        environmentalHealth: (airQuality && weather && population) ? calculateEnvironmentalHealth(
+          (airQuality.aqi as number) || 0, 
+          (weather.current as Record<string, unknown>)?.temperature as number || 0, 
+          (population.latestYear as number) || 0
+        ) : null
       },
       errors: {
         openMeteo: openMeteoRes.status === 'rejected' ? (openMeteoRes.reason as Error)?.message : null, // Primary weather + air quality

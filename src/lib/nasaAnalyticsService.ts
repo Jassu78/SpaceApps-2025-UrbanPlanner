@@ -94,8 +94,8 @@ class NASAAnalyticsService {
       }
     } catch (error) {
       console.error('Error fetching real NASA analytics data:', error)
-      // Return fallback data with real structure
-      return this.getFallbackData()
+      // No real data available
+      return null
     }
   }
 
@@ -155,8 +155,8 @@ class NASAAnalyticsService {
 
   private processRealTemperatureData(realTemperatureData: any[]) {
     if (!realTemperatureData || realTemperatureData.length === 0) {
-      console.log('📊 Using fallback temperature data (Real temperature data unavailable)')
-      return this.generateRealisticTemperatureData()
+      console.log('📊 No real temperature data available')
+      return null
     }
 
     console.log('🌡️ Processing REAL scientific temperature data:', realTemperatureData.length, 'data points')
@@ -199,8 +199,8 @@ class NASAAnalyticsService {
       const realVegetationData = await nasaRealDataService.getRealVegetationData(lat, lng)
       
       if (!realVegetationData || realVegetationData.length === 0) {
-        console.log('📊 Using fallback vegetation data (Real vegetation data unavailable)')
-        return this.generateRealisticVegetationData()
+        console.log('📊 No real vegetation data available')
+        return null
       }
 
       console.log('🌱 Processing REAL vegetation data:', realVegetationData.length, 'granules')
@@ -238,14 +238,14 @@ class NASAAnalyticsService {
       }
     } catch (error) {
       console.error('Error processing real vegetation data:', error)
-      return this.generateRealisticVegetationData()
+      return null
     }
   }
 
   private processTemperatureData(modisData: any) {
     if (!modisData?.success || !modisData.data?.granules?.length) {
-      console.log('📊 Using fallback temperature data (MODIS data unavailable)')
-      return this.generateRealisticTemperatureData()
+      console.log('📊 No MODIS temperature data available')
+      return null
     }
 
     const granules = modisData.data.granules
@@ -322,8 +322,8 @@ class NASAAnalyticsService {
 
   private processAirQualityData(firmsData: any) {
     if (!firmsData?.success || !firmsData.data?.length) {
-      console.log('📊 Using fallback air quality data (FIRMS data unavailable)')
-      return this.generateRealisticAirQualityData()
+      console.log('📊 No FIRMS air quality data available')
+      return null
     }
 
     const fireData = firmsData.data as FIRMSFireData[]
@@ -385,8 +385,8 @@ class NASAAnalyticsService {
 
   private processVegetationData(modisData: any) {
     if (!modisData?.success || !modisData.data?.granules?.length) {
-      console.log('📊 Using fallback vegetation data (MODIS data unavailable)')
-      return this.generateRealisticVegetationData()
+      console.log('📊 No MODIS vegetation data available')
+      return null
     }
 
     const granules = modisData.data.granules
@@ -449,8 +449,8 @@ class NASAAnalyticsService {
 
   private processPrecipitationData(populationData: any) {
     if (!populationData?.success) {
-      console.log('📊 Using fallback precipitation data (Population data unavailable)')
-      return this.generateRealisticPrecipitationData()
+      console.log('📊 No population data available for precipitation calculation')
+      return null
     }
 
     const population = populationData.data?.population || 1000000
@@ -507,82 +507,9 @@ class NASAAnalyticsService {
     }
   }
 
-  private generateRealisticTemperatureData() {
-    const baseTemp = 20 + Math.random() * 15 // 20-35°C
-    const history = Array.from({ length: 7 }, () => baseTemp + (Math.random() - 0.5) * 4)
-    const current = history[0]
-    const average = history.reduce((a, b) => a + b, 0) / history.length
-    const trend = ((current - average) / average) * 100
+  // All generateRealistic methods removed - only real data is returned
 
-    return {
-      current: Math.round(current * 10) / 10,
-      average: Math.round(average * 10) / 10,
-      trend: Math.round(trend * 10) / 10,
-      history,
-      source: 'MODIS Terra Land Surface Temperature',
-      lastUpdated: new Date().toISOString()
-    }
-  }
-
-  private generateRealisticAirQualityData() {
-    const baseAQI = 60 + Math.random() * 30 // 60-90 AQI
-    const history = Array.from({ length: 7 }, () => baseAQI + (Math.random() - 0.5) * 20)
-    const current = history[0]
-    const average = history.reduce((a, b) => a + b, 0) / history.length
-    const trend = ((current - average) / average) * 100
-
-    return {
-      current: Math.round(current),
-      average: Math.round(average),
-      trend: Math.round(trend * 10) / 10,
-      history,
-      source: 'FIRMS Fire Data (Air Quality Proxy)',
-      lastUpdated: new Date().toISOString()
-    }
-  }
-
-  private generateRealisticVegetationData() {
-    const baseNDVI = 0.4 + Math.random() * 0.5 // 0.4-0.9 NDVI
-    const history = Array.from({ length: 7 }, () => baseNDVI + (Math.random() - 0.5) * 0.2)
-    const current = history[0]
-    const average = history.reduce((a, b) => a + b, 0) / history.length
-    const trend = ((current - average) / average) * 100
-
-    return {
-      current: Math.round(current * 1000) / 1000,
-      average: Math.round(average * 1000) / 1000,
-      trend: Math.round(trend * 10) / 10,
-      history,
-      source: 'MODIS Terra NDVI',
-      lastUpdated: new Date().toISOString()
-    }
-  }
-
-  private generateRealisticPrecipitationData() {
-    const basePrecip = 10 + Math.random() * 20 // 10-30 mm
-    const history = Array.from({ length: 7 }, () => basePrecip + (Math.random() - 0.5) * 8)
-    const current = history[0]
-    const average = history.reduce((a, b) => a + b, 0) / history.length
-    const trend = ((current - average) / average) * 100
-
-    return {
-      current: Math.round(current * 10) / 10,
-      average: Math.round(average * 10) / 10,
-      trend: Math.round(trend * 10) / 10,
-      history,
-      source: 'SEDAC Population Data (Precipitation Proxy)',
-      lastUpdated: new Date().toISOString()
-    }
-  }
-
-  private getFallbackData(): NASAAnalyticsData {
-    return {
-      temperature: this.generateRealisticTemperatureData(),
-      airQuality: this.generateRealisticAirQualityData(),
-      vegetation: this.generateRealisticVegetationData(),
-      precipitation: this.generateRealisticPrecipitationData()
-    }
-  }
+  // Fallback data generation removed - only real data is returned
 }
 
 export const nasaAnalyticsService = new NASAAnalyticsService()

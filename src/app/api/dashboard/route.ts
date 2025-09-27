@@ -19,11 +19,9 @@ export async function GET(request: NextRequest) {
     
     // Use relative URLs for internal API calls (works better on Vercel)
     // Open-Meteo is now primary for weather + air quality, NOAA as fallback
-    let airQualityRes, weatherRes, openMeteoRes, populationRes, landsatRes
-    
     console.log('Dashboard API - Using relative URLs for internal API calls')
     
-    [openMeteoRes, airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
+    const [openMeteoRes, airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
       fetch(`/api/open-meteo?lat=${latStr}&lng=${lngStr}`), // Primary: Open-Meteo (global + air quality)
       fetch(`/api/waqi?location=${location}&coords=${coords}`), // Fallback air quality
       fetch(`/api/weather?coords=${coords}`), // Fallback weather (NOAA - US only)
@@ -195,7 +193,15 @@ export async function GET(request: NextRequest) {
         region: null,
         elevation: null
       },
-      satellite: landsat ? DataProcessor.processSatellite(landsat) : {
+      satellite: landsat ? {
+        latestImage: landsat,
+        cloudCover: null,
+        platform: 'Landsat',
+        availableBands: [],
+        hasError: false,
+        ndvi: null,
+        health: 'Data available'
+      } : {
         latestImage: null,
         cloudCover: null,
         platform: 'No Data Available',

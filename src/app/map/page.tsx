@@ -17,7 +17,9 @@ import {
   Search,
   MapPin,
   Square,
-  Satellite
+  Satellite,
+  BarChart3,
+  Activity
 } from "lucide-react"
 
 interface MapLayer {
@@ -191,27 +193,35 @@ export default function MapPage() {
       <div className="flex h-[calc(100vh-100px)] bg-slate-900">
         {/* Interactive Map Container */}
         <div className="flex-1 relative bg-slate-900">
-                 <InteractiveMap
-                   selectedLocation={selectedLocation}
-                   onLocationSelect={setSelectedLocation}
-                   layers={layers}
-                   onLayerToggle={toggleLayer}
-                   onLayerOpacityChange={updateLayerOpacity}
-                   searchQuery={searchQuery}
-                   onSearchChange={setSearchQuery}
-                   onSearch={searchLocation}
-                   manualCoords={manualCoords}
-                   onManualCoordsChange={setManualCoords}
-                   onManualCoordsSubmit={handleManualCoords}
-                   onAreaSelection={startAreaSelection}
-                   isAreaSelectionMode={isAreaSelectionMode}
-                   onAreaSelected={setSelectedArea}
-                 />
+          <InteractiveMap
+            selectedLocation={selectedLocation}
+            onLocationSelect={setSelectedLocation}
+            layers={layers}
+            onLayerToggle={toggleLayer}
+            onLayerOpacityChange={updateLayerOpacity}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSearch={searchLocation}
+            manualCoords={manualCoords}
+            onManualCoordsChange={setManualCoords}
+            onManualCoordsSubmit={handleManualCoords}
+            onAreaSelection={startAreaSelection}
+            isAreaSelectionMode={isAreaSelectionMode}
+            onAreaSelected={setSelectedArea}
+          />
         </div>
 
-        {/* Sidebar */}
-        <div className="w-80 bg-black/20 backdrop-blur-sm border-l border-white/10 overflow-y-auto">
+        {/* Enhanced Sidebar */}
+        <div className="w-96 bg-black/30 backdrop-blur-md border-l border-white/20 overflow-y-auto">
           <div className="p-6 space-y-6">
+            {/* Header */}
+            <div className="border-b border-white/10 pb-4">
+              <h2 className="text-xl font-bold text-white mb-2">Data Explorer</h2>
+              <p className="text-sm text-gray-300">
+                Interactive analysis of NASA Earth observation data
+              </p>
+            </div>
+
             {/* Search Location */}
             <div>
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -460,6 +470,18 @@ export default function MapPage() {
                   <div className="flex items-center gap-3">
                     <ChevronDown className="w-5 h-5 text-green-400" />
                     <span className="text-white">Export Data</span>
+                  </div>
+                </button>
+                <button className="w-full p-3 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 transition-colors border border-purple-500/30 text-left">
+                  <div className="flex items-center gap-3">
+                    <BarChart3 className="w-5 h-5 text-purple-400" />
+                    <span className="text-white">Generate Report</span>
+                  </div>
+                </button>
+                <button className="w-full p-3 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 transition-colors border border-orange-500/30 text-left">
+                  <div className="flex items-center gap-3">
+                    <Activity className="w-5 h-5 text-orange-400" />
+                    <span className="text-white">AI Analysis</span>
                   </div>
                 </button>
               </div>

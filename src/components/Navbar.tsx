@@ -30,11 +30,11 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
   ]
 
   const appPages = [
-    { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
-    { name: "Map", href: "/map", icon: MapPin },
-    { name: "Analytics", href: "/analytics", icon: Activity },
-    { name: "AI Chat", href: "/chat", icon: MessageSquare },
-    { name: "API Test", href: "/api-test", icon: TestTube },
+    { name: "Overview", href: "/dashboard", icon: BarChart3, description: "Current conditions & insights" },
+    { name: "Explore", href: "/map", icon: MapPin, description: "Interactive data exploration" },
+    { name: "Analyze", href: "/analytics", icon: Activity, description: "Detailed data analysis" },
+    { name: "Plan", href: "/scenarios", icon: MessageSquare, description: "Scenario planning & modeling" },
+    { name: "Share", href: "/reports", icon: TestTube, description: "Reports & presentations" },
   ]
 
   const handleNavClick = (href: string) => {
@@ -188,7 +188,7 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
                       key={page.name}
                       href={page.href}
                       onClick={() => setIsAppMenuOpen(false)}
-                      className={`flex items-center space-x-3 px-4 py-2 text-sm transition-all duration-200 hover:bg-white/10 ${
+                      className={`block px-4 py-3 text-sm transition-all duration-200 hover:bg-white/10 ${
                         pathname === page.href
                           ? isDeepSpace
                             ? 'text-cyan-300 bg-cyan-500/10'
@@ -198,8 +198,15 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
                             : 'text-white hover:text-blue-300'
                       }`}
                     >
-                      <page.icon className="w-4 h-4" />
-                      <span>{page.name}</span>
+                      <div className="flex items-center space-x-3 mb-1">
+                        <page.icon className="w-4 h-4" />
+                        <span className="font-medium">{page.name}</span>
+                      </div>
+                      <p className={`text-xs ml-7 ${
+                        isDeepSpace ? 'text-cyan-400/70' : 'text-gray-400'
+                      }`}>
+                        {page.description}
+                      </p>
                     </Link>
                   ))}
                 </div>
@@ -323,7 +330,7 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
                   key={page.name}
                   href={page.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center space-x-3 py-2 text-sm font-medium transition-all duration-300 ${
+                  className={`block py-3 text-sm transition-all duration-300 ${
                     pathname === page.href
                       ? isDeepSpace
                         ? 'text-cyan-300'
@@ -333,8 +340,15 @@ export const Navbar = ({ isDeepSpace = false, onThemeChange }: NavbarProps) => {
                         : 'text-white hover:text-blue-300'
                   }`}
                 >
-                  <page.icon className="w-4 h-4" />
-                  <span>{page.name}</span>
+                  <div className="flex items-center space-x-3 mb-1">
+                    <page.icon className="w-4 h-4" />
+                    <span className="font-medium">{page.name}</span>
+                  </div>
+                  <p className={`text-xs ml-7 ${
+                    isDeepSpace ? 'text-cyan-400/70' : 'text-gray-400'
+                  }`}>
+                    {page.description}
+                  </p>
                 </Link>
               ))}
             </div>

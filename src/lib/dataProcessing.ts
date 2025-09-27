@@ -272,13 +272,22 @@ export class APIClient {
     }
   }
 
-  async fetchAirQuality(location: string = 'here') {
+  async fetchAirQuality(location: string = 'here', coords?: string) {
+    // Use Open-Meteo as primary air quality source for global coverage
+    if (coords) {
+      const [lat, lng] = coords.split(',')
+      const response = await fetch(`${this.baseUrl}/api/open-meteo?lat=${lat}&lng=${lng}`)
+      return response.json()
+    }
+    // Fallback to WAQI if no coordinates provided
     const response = await fetch(`${this.baseUrl}/api/waqi?location=${location}`)
     return response.json()
   }
 
   async fetchWeather(coords: string = '40.7128,-74.0060') {
-    const response = await fetch(`${this.baseUrl}/api/weather?coords=${coords}`)
+    // Use Open-Meteo as primary weather source for global coverage
+    const [lat, lng] = coords.split(',')
+    const response = await fetch(`${this.baseUrl}/api/open-meteo?lat=${lat}&lng=${lng}`)
     return response.json()
   }
 

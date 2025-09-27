@@ -19,14 +19,15 @@ export async function GET(request: NextRequest) {
     console.log('Dashboard API - Vercel URL:', process.env.VERCEL_URL)
     
     // Try to fetch data with fallback to relative URLs if absolute URLs fail
+    // Open-Meteo is now primary for weather + air quality, NOAA as fallback
     let airQualityRes, weatherRes, openMeteoRes, populationRes, landsatRes
     
     try {
-      // First try with absolute URLs
-      [airQualityRes, weatherRes, openMeteoRes, populationRes, landsatRes] = await Promise.allSettled([
-        fetch(`${baseUrl}/api/waqi?location=${location}&coords=${coords}`),
-        fetch(`${baseUrl}/api/weather?coords=${coords}`),
-        fetch(`${baseUrl}/api/open-meteo?lat=${latStr}&lng=${lngStr}`),
+      // First try with absolute URLs - Open-Meteo first for global coverage
+      [openMeteoRes, airQualityRes, weatherRes, populationRes, landsatRes] = await Promise.allSettled([
+        fetch(`${baseUrl}/api/open-meteo?lat=${latStr}&lng=${lngStr}`), // Primary: Open-Meteo (global + air quality)
+        fetch(`${baseUrl}/api/waqi?location=${location}&coords=${coords}`), // Fallback air quality
+        fetch(`${baseUrl}/api/weather?coords=${coords}`), // Fallback weather (NOAA - US only)
         fetch(`${baseUrl}/api/population?lat=${latStr}&lng=${lngStr}`),
         fetch(`${baseUrl}/api/landsat?bbox=${bbox}`)
       ])
@@ -34,50 +35,54 @@ export async function GET(request: NextRequest) {
       console.log('Absolute URL fetch failed, trying relative URLs:', error)
       // Fallback to relative URLs
       const fallbackResults = await Promise.allSettled([
-        fetch(`/api/waqi?location=${location}&coords=${coords}`),
-        fetch(`/api/weather?coords=${coords}`),
-        fetch(`/api/open-meteo?lat=${latStr}&lng=${lngStr}`),
+        fetch(`/api/open-meteo?lat=${latStr}&lng=${lngStr}`), // Primary: Open-Meteo
+        fetch(`/api/waqi?location=${location}&coords=${coords}`), // Fallback air quality
+        fetch(`/api/weather?coords=${coords}`), // Fallback weather
         fetch(`/api/population?lat=${latStr}&lng=${lngStr}`),
         fetch(`/api/landsat?bbox=${bbox}`)
       ])
-      airQualityRes = fallbackResults[0]
-      weatherRes = fallbackResults[1]
-      openMeteoRes = fallbackResults[2]
+      openMeteoRes = fallbackResults[0]
+      airQualityRes = fallbackResults[1]
+      weatherRes = fallbackResults[2]
       populationRes = fallbackResults[3]
       landsatRes = fallbackResults[4]
     }
     
     console.log('Dashboard API - Fetch results:', {
-      airQuality: airQualityRes.status,
-      weather: weatherRes.status,
+      openMeteo: openMeteoRes.status, // Primary weather + air quality
+      airQuality: airQualityRes.status, // Fallback air quality
+      weather: weatherRes.status, // Fallback weather (NOAA)
       population: populationRes.status,
-      openMeteo: openMeteoRes.status,
       landsat: landsatRes.status
     })
 
     // Process results with error handling and fallback data
+    // Open-Meteo is now primary source for weather + air quality
     let airQuality = null
     let weather = null
     let population = null
     let openMeteo = null
     let landsat = null
 
+    // Process Open-Meteo first (primary source for weather + air quality)
+    try {
+      openMeteo = openMeteoRes.status === 'fulfilled' ? await openMeteoRes.value.json() as Record<string, unknown> : null
+    } catch (error) {
+      console.error('Open-Meteo API error:', error)
+    }
+
+    // Process fallback air quality (WAQI)
     try {
       airQuality = airQualityRes.status === 'fulfilled' ? await airQualityRes.value.json() as Record<string, unknown> : null
     } catch (error) {
       console.error('Air Quality API error:', error)
     }
 
+    // Process fallback weather (NOAA)
     try {
       weather = weatherRes.status === 'fulfilled' ? await weatherRes.value.json() as Record<string, unknown> : null
     } catch (error) {
       console.error('Weather API error:', error)
-    }
-
-    try {
-      openMeteo = openMeteoRes.status === 'fulfilled' ? await openMeteoRes.value.json() as Record<string, unknown> : null
-    } catch (error) {
-      console.error('Open-Meteo API error:', error)
     }
 
     try {
@@ -93,8 +98,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Only add fallback data if APIs actually failed (not just null)
-    if (!airQuality && airQualityRes.status === 'rejected') {
-      console.log('Air Quality API failed, using fallback data')
+    // Open-Meteo provides both weather and air quality, so we only need fallbacks if it fails
+    if (!openMeteo && openMeteoRes.status === 'rejected') {
+      console.log('Open-Meteo API failed, using fallback data for weather and air quality')
+      
+      // Fallback weather data
+      weather = {
+        temperature: 23.5,
+        humidity: 65,
+        precipitation: 5.2,
+        windSpeed: 12.3,
+        pressure: 1013.2,
+        description: 'Partly Cloudy',
+        timestamp: new Date().toISOString(),
+        source: 'Fallback Data (Open-Meteo Unavailable)'
+      }
+      
+      // Fallback air quality data
       airQuality = {
         aqi: 45,
         status: 'Good',
@@ -109,22 +129,14 @@ export async function GET(request: NextRequest) {
         },
         city: 'Sample City',
         timestamp: new Date().toISOString(),
-        source: 'Fallback Data (API Unavailable)'
+        source: 'Fallback Data (Open-Meteo Unavailable)'
       }
+    } else if (!airQuality && airQualityRes.status === 'rejected') {
+      console.log('WAQI API failed, but Open-Meteo air quality available')
     }
 
-    if (!weather && weatherRes.status === 'rejected') {
-      console.log('Weather API failed, using fallback data')
-      weather = {
-        temperature: 23.5,
-        humidity: 65,
-        precipitation: 5.2,
-        windSpeed: 12.3,
-        pressure: 1013.2,
-        description: 'Partly Cloudy',
-        timestamp: new Date().toISOString(),
-        source: 'Fallback Data (API Unavailable)'
-      }
+    if (!weather && weatherRes.status === 'rejected' && !openMeteo) {
+      console.log('NOAA Weather API failed, but Open-Meteo weather available')
     }
 
     if (!population && populationRes.status === 'rejected') {
@@ -160,14 +172,46 @@ export async function GET(request: NextRequest) {
         coordinates: airQuality?.location || [parseFloat(coords.split(',')[0]), parseFloat(coords.split(',')[1])],
         country: country
       },
-      airQuality: airQuality ? {
+      airQuality: openMeteo ? {
+        // Use Open-Meteo air quality data (primary source)
+        aqi: (openMeteo.current as Record<string, unknown>)?.aqiEuropean as number || 0,
+        status: getAQIStatus((openMeteo.current as Record<string, unknown>)?.aqiEuropean as number || 0),
+        pollutants: {
+          pm25: (openMeteo.current as Record<string, unknown>)?.pm25 as number || 0,
+          pm10: (openMeteo.current as Record<string, unknown>)?.pm10 as number || 0,
+          no2: (openMeteo.current as Record<string, unknown>)?.nitrogenDioxide as number || 0,
+          o3: (openMeteo.current as Record<string, unknown>)?.ozone as number || 0,
+          so2: (openMeteo.current as Record<string, unknown>)?.sulphurDioxide as number || 0,
+          co: (openMeteo.current as Record<string, unknown>)?.carbonMonoxide as number || 0
+        },
+        healthImpact: getHealthImpact((openMeteo.current as Record<string, unknown>)?.aqiEuropean as number || 0),
+        lastUpdated: new Date().toISOString(),
+        source: 'Open-Meteo (Primary)'
+      } : airQuality ? {
+        // Fallback to WAQI if Open-Meteo unavailable
         aqi: airQuality.aqi as number,
         status: getAQIStatus(airQuality.aqi as number),
         pollutants: airQuality.pollutants as Record<string, unknown>,
         healthImpact: getHealthImpact(airQuality.aqi as number),
-        lastUpdated: airQuality.timestamp as string
+        lastUpdated: airQuality.timestamp as string,
+        source: 'WAQI (Fallback)'
       } : null,
-      weather: weather ? {
+      weather: openMeteo ? {
+        // Use Open-Meteo weather data (primary source)
+        temperature: (openMeteo.current as Record<string, unknown>)?.temperatureC as number || 0,
+        humidity: (openMeteo.current as Record<string, unknown>)?.humidityPct as number || 0,
+        windSpeed: (openMeteo.current as Record<string, unknown>)?.windSpeed10m as number || 0,
+        precipitation: (openMeteo.current as Record<string, unknown>)?.precipitationMm as number || 0,
+        pressure: (openMeteo.current as Record<string, unknown>)?.pressureHpa as number || 0,
+        forecast: (openMeteo.daily as Record<string, unknown>)?.date as string || 'Current conditions',
+        heatIndex: calculateHeatIndex(
+          (openMeteo.current as Record<string, unknown>)?.temperatureC as number || 0,
+          (openMeteo.current as Record<string, unknown>)?.humidityPct as number || 0
+        ),
+        lastUpdated: new Date().toISOString(),
+        source: 'Open-Meteo (Primary)'
+      } : weather ? {
+        // Fallback to NOAA weather if Open-Meteo unavailable
         temperature: (weather.current as Record<string, unknown>)?.temperature as number || weather.temperature as number,
         humidity: (weather.current as Record<string, unknown>)?.humidity as number || weather.humidity as number,
         windSpeed: (weather.current as Record<string, unknown>)?.windSpeed as string || weather.windSpeed as string,
@@ -177,7 +221,8 @@ export async function GET(request: NextRequest) {
           (weather.current as Record<string, unknown>)?.temperature as number || weather.temperature as number, 
           (weather.current as Record<string, unknown>)?.humidity as number || weather.humidity as number
         ),
-        lastUpdated: (weather.metadata as Record<string, unknown>)?.generatedAt as string || weather.timestamp as string
+        lastUpdated: (weather.metadata as Record<string, unknown>)?.generatedAt as string || weather.timestamp as string,
+        source: 'NOAA (Fallback)'
       } : null,
       weatherGround: openMeteo ? {
         source: 'Open-Meteo (Weather API Ground)',
@@ -211,8 +256,9 @@ export async function GET(request: NextRequest) {
         )
       },
       errors: {
-        airQuality: airQualityRes.status === 'rejected' ? (airQualityRes.reason as Error)?.message : null,
-        weather: weatherRes.status === 'rejected' ? (weatherRes.reason as Error)?.message : null,
+        openMeteo: openMeteoRes.status === 'rejected' ? (openMeteoRes.reason as Error)?.message : null, // Primary weather + air quality
+        airQuality: airQualityRes.status === 'rejected' ? (airQualityRes.reason as Error)?.message : null, // Fallback air quality
+        weather: weatherRes.status === 'rejected' ? (weatherRes.reason as Error)?.message : null, // Fallback weather
         population: populationRes.status === 'rejected' ? (populationRes.reason as Error)?.message : null,
         landsat: landsatRes.status === 'rejected' ? (landsatRes.reason as Error)?.message : null
       }

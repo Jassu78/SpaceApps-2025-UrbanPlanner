@@ -99,29 +99,45 @@ export const Footer = ({ isDeepSpace = false }: FooterProps) => {
         />
         
         {/* Floating particles */}
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className={`absolute rounded-sm ${
-              isDeepSpace ? 'w-1 h-1 bg-cyan-400/30' : 'w-1 h-1 bg-white/20'
-            }`}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0],
-              rotate: [0, 180, 360],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 3,
-              repeat: Infinity,
-              delay: Math.random() * 8,
-              ease: "easeInOut"
-            }}
-          />
-        ))}
+        {[...Array(20)].map((_, i) => {
+          // Use fixed positions based on index to avoid hydration issues
+          const positions = [
+            { left: 5, top: 15 }, { left: 25, top: 35 }, { left: 45, top: 5 },
+            { left: 65, top: 25 }, { left: 85, top: 45 }, { left: 10, top: 55 },
+            { left: 30, top: 75 }, { left: 50, top: 65 }, { left: 70, top: 85 },
+            { left: 90, top: 95 }, { left: 15, top: 25 }, { left: 35, top: 45 },
+            { left: 55, top: 15 }, { left: 75, top: 35 }, { left: 95, top: 55 },
+            { left: 20, top: 75 }, { left: 40, top: 95 }, { left: 60, top: 5 },
+            { left: 80, top: 25 }, { left: 100, top: 45 }
+          ];
+          const pos = positions[i] || { left: 50, top: 50 };
+          const randomDuration = 4 + (i % 4);
+          const randomDelay = i * 0.4;
+          
+          return (
+            <motion.div
+              key={i}
+              className={`absolute rounded-sm ${
+                isDeepSpace ? 'w-1 h-1 bg-cyan-400/30' : 'w-1 h-1 bg-white/20'
+              }`}
+              style={{
+                left: `${pos.left}%`,
+                top: `${pos.top}%`,
+              }}
+              animate={{
+                opacity: [0, 1, 0],
+                scale: [0, 1, 0],
+                rotate: [0, 180, 360],
+              }}
+              transition={{
+                duration: randomDuration,
+                repeat: Infinity,
+                delay: randomDelay,
+                ease: "easeInOut"
+              }}
+            />
+          );
+        })}
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">

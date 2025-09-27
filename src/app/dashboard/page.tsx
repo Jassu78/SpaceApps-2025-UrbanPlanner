@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { 
   MapPin, 
   Thermometer, 
@@ -15,11 +16,15 @@ import {
   CheckCircle,
   BarChart3,
   RefreshCw,
-  Loader2
+  Loader2,
+  Play,
+  ArrowRight,
+  Zap
 } from "lucide-react"
 import { APIClient } from '@/lib/dataProcessing'
 import ClimateTrendsChart from '@/components/ClimateTrendsChart'
 import OpenStreetMapView from '@/components/OpenStreetMapView'
+import { OnboardingModal } from '@/components/OnboardingModal'
 import Link from 'next/link'
 
 interface DashboardData {
@@ -72,11 +77,20 @@ interface DashboardData {
   }
 }
 
+interface OnboardingData {
+  focusArea: string
+  location: string
+  coordinates?: { lat: number; lng: number }
+}
+
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
+  const [isFirstVisit, setIsFirstVisit] = useState(false)
 
   const apiClient = useMemo(() => new APIClient(), [])
 
@@ -96,6 +110,15 @@ export default function DashboardPage() {
     }
   }, [apiClient])
 
+  // Check if this is first visit
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('moonlight-visited')
+    if (!hasVisited) {
+      setIsFirstVisit(true)
+      setShowOnboarding(true)
+    }
+  }, [])
+
   useEffect(() => {
     fetchDashboardData()
     
@@ -103,6 +126,17 @@ export default function DashboardPage() {
     const interval = setInterval(fetchDashboardData, 15 * 60 * 1000)
     return () => clearInterval(interval)
   }, [fetchDashboardData])
+
+  const handleOnboardingComplete = (data: OnboardingData) => {
+    setOnboardingData(data)
+    setShowOnboarding(false)
+    localStorage.setItem('moonlight-visited', 'true')
+    localStorage.setItem('moonlight-onboarding', JSON.stringify(data))
+  }
+
+  const handleStartAnalysis = () => {
+    setShowOnboarding(true)
+  }
 
   const getAirQualityStatus = (aqi: number) => {
     if (aqi <= 50) return { status: 'Good', color: 'green', icon: CheckCircle }
@@ -157,12 +191,17 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-20">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header with Refresh Button */}
+        {/* Simplified Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Urban Planning Dashboard</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {onboardingData ? `Analysis: ${onboardingData.location}` : 'Urban Planning Dashboard'}
+            </h1>
             <p className="text-gray-300">
-              Real-time environmental and demographic data for urban planning
+              {onboardingData 
+                ? `Focus: ${onboardingData.focusArea.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                : 'Real-time environmental and demographic data for urban planning'
+              }
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -181,6 +220,66 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* Quick Actions Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-white">Quick Actions</h2>
+                <Button
+                  onClick={handleStartAnalysis}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Start New Analysis
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Link href="/map" className="group">
+                  <Card className="bg-white/5 hover:bg-white/10 transition-all duration-200 border-white/10 group-hover:border-blue-500/30">
+                    <CardContent className="p-4 text-center">
+                      <MapPin className="w-8 h-8 text-blue-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                      <h3 className="text-white font-medium mb-1">Explore Map</h3>
+                      <p className="text-gray-400 text-sm">Interactive satellite view</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+                <Link href="/analytics" className="group">
+                  <Card className="bg-white/5 hover:bg-white/10 transition-all duration-200 border-white/10 group-hover:border-green-500/30">
+                    <CardContent className="p-4 text-center">
+                      <BarChart3 className="w-8 h-8 text-green-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                      <h3 className="text-white font-medium mb-1">Analyze Data</h3>
+                      <p className="text-gray-400 text-sm">Detailed data analysis</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+                <Link href="/chat" className="group">
+                  <Card className="bg-white/5 hover:bg-white/10 transition-all duration-200 border-white/10 group-hover:border-purple-500/30">
+                    <CardContent className="p-4 text-center">
+                      <Activity className="w-8 h-8 text-purple-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                      <h3 className="text-white font-medium mb-1">AI Assistant</h3>
+                      <p className="text-gray-400 text-sm">Ask questions about data</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+                <div className="group">
+                  <Card className="bg-white/5 hover:bg-white/10 transition-all duration-200 border-white/10 group-hover:border-orange-500/30">
+                    <CardContent className="p-4 text-center">
+                      <Zap className="w-8 h-8 text-orange-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                      <h3 className="text-white font-medium mb-1">Smart Insights</h3>
+                      <p className="text-gray-400 text-sm">AI-powered recommendations</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -542,6 +641,13 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   )
 }

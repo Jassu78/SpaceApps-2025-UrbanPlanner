@@ -866,6 +866,10 @@ export default function DashboardPage() {
                       pollutants: dashboardData.airQuality.pollutants,
                       timestamp: dashboardData.airQuality.lastUpdated || new Date().toISOString()
                     } : null}
+                    coordinates={onboardingData?.coordinates ? {
+                      lat: onboardingData.coordinates.lat,
+                      lng: onboardingData.coordinates.lng
+                    } : undefined}
                   />
                 </div>
               </CardContent>

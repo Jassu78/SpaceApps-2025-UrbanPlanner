@@ -19,9 +19,23 @@ interface ClimateTrendsChartProps {
     }
     timestamp: string
   } | null
+  coordinates?: {
+    lat: number
+    lng: number
+  }
 }
 
-export default function ClimateTrendsChart({ weatherData, airQualityData }: ClimateTrendsChartProps) {
+interface HistoricalDataPoint {
+  date: string
+  temperatureMax: number | null
+  temperatureMin: number | null
+  temperatureMean: number | null
+  precipitation: number | null
+  humidity: number | null
+  windSpeedMax: number | null
+}
+
+export default function ClimateTrendsChart({ weatherData, airQualityData, coordinates }: ClimateTrendsChartProps) {
   const [chartData, setChartData] = React.useState<Array<{
     date: string
     temperature: number
@@ -32,41 +46,81 @@ export default function ClimateTrendsChart({ weatherData, airQualityData }: Clim
     description?: string
   }>>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [historicalData, setHistoricalData] = React.useState<HistoricalDataPoint[]>([])
 
-  // Check if we have real data available
+  // Fetch historical weather data
   React.useEffect(() => {
-    const checkDataAvailability = () => {
-      setIsLoading(false)
-      
-      // Only show chart if we have real weather and air quality data
-      if (weatherData?.temperature && airQualityData?.aqi) {
-        // Generate minimal real data based on current values only
-        const data = []
-        const today = new Date()
+    const fetchHistoricalData = async () => {
+      if (!coordinates) {
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        console.log('🌍 Fetching historical weather data for coordinates:', coordinates)
+        const response = await fetch(`/api/open-meteo-history?lat=${coordinates.lat}&lng=${coordinates.lng}&days=30`)
         
-        for (let i = 6; i >= 0; i--) {
-          const date = new Date(today)
-          date.setDate(date.getDate() - i)
+        if (response.ok) {
+          const data = await response.json()
+          console.log('📊 Historical weather data received:', data.data.length, 'days')
+          console.log('📊 Data is historical:', data.isHistorical)
           
-          data.push({
-            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            temperature: weatherData.temperature + (Math.random() - 0.5) * 2, // Small variation
-            aqi: airQualityData.aqi + (Math.random() - 0.5) * 4, // Small variation
-            humidity: weatherData.humidity + (Math.random() - 0.5) * 10,
-            precipitation: Math.random() * 5,
-            pm25: airQualityData.pollutants?.pm25 || 12
-          })
+          if (!data.isHistorical) {
+            console.warn('⚠️ Warning: Received forecast data instead of historical data')
+          }
+          
+          setHistoricalData(data.data || [])
+        } else {
+          console.error('❌ Failed to fetch historical data:', response.status)
         }
-        
-        setChartData(data)
-      } else {
-        // No real data available - show empty state
-        setChartData([])
+      } catch (error) {
+        console.error('❌ Error fetching historical data:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    checkDataAvailability()
-  }, [weatherData, airQualityData])
+    fetchHistoricalData()
+  }, [coordinates])
+
+  // Process data for chart
+  React.useEffect(() => {
+    if (historicalData.length > 0) {
+      // Use real historical data
+      const processedData = historicalData.slice(-14).map((day, index) => ({
+        date: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        temperature: day.temperatureMean || day.temperatureMax || 0,
+        aqi: airQualityData?.aqi || 50, // Use current AQI as baseline
+        humidity: day.humidity || 0,
+        precipitation: day.precipitation || 0,
+        pm25: airQualityData?.pollutants?.pm25 || 12
+      }))
+      
+      setChartData(processedData)
+    } else if (weatherData?.temperature && airQualityData?.aqi) {
+      // Fallback to current data with variations
+      const data = []
+      const today = new Date()
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(date.getDate() - i)
+        
+        data.push({
+          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          temperature: weatherData.temperature + (Math.random() - 0.5) * 2,
+          aqi: airQualityData.aqi + (Math.random() - 0.5) * 4,
+          humidity: weatherData.humidity + (Math.random() - 0.5) * 10,
+          precipitation: Math.random() * 5,
+          pm25: airQualityData.pollutants?.pm25 || 12
+        })
+      }
+      
+      setChartData(data)
+    } else {
+      setChartData([])
+    }
+  }, [weatherData, airQualityData, historicalData])
 
   if (isLoading) {
     return (
